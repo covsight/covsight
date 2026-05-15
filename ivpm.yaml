@@ -1,0 +1,8 @@
+package:
+  name: covsight
+
+  dep-sets:
+  - name: default-dev
+    deps: 
+    - name: covsight-core
+      url: https://github.com/covsight/covsight-core.git

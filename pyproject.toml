@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "covsight"
+dynamic = ["version"]
+requires-python = ">=3.10"
+description = "Coverage analysis CLI and tooling built on covsight-core"
+license = "Apache-2.0"
+dependencies = [
+    "covsight-core",
+    "rich>=13.0",
+]
+
+[project.scripts]
+covsight = "covsight.cli.main:main"
+
+# Entry-points for report format plugins will be added in Milestone 8
+[project.entry-points."covsight.formats.rpt"]
+text = "covsight.analysis.report_text:TextReportPlugin"
+json = "covsight.analysis.report_json:JsonReportPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+root = "."
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

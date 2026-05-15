@@ -1,0 +1,7 @@
+sphinx>=7.0
+sphinx-rtd-theme
+sphinxarg.ext
+sphinx-design
+sphinx-issues
+sphinx.ext.autodoc
+sphinx.ext.napoleon
