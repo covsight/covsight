@@ -24,39 +24,42 @@ history (see :ref:`test-history`) it enables:
 Quick-start
 **********************
 
-Import an OpenTitan-style Hjson testplan and embed it in a ``.cdb``::
+Author a testplan in YAML::
 
-    from covsight.core.ncdb.testplan_hjson import import_hjson
-    from covsight.core.ncdb.ncdb_ucis import NcdbUCIS
-    from covsight.core.ncdb.ncdb_writer import NcdbWriter
+    # uart.yaml
+    $schema: "https://schema.covsight.io/testplan/v1"
+    format_version: 1
+    name: uart
+    owner: dv-team
+    goals:
+      - id: functional
+        title: Functional verification
+        status: in_progress
+        goals:
+          - id: reset
+            title: Reset behaviour
+            status: complete
+            testpoints:
+              - name: uart_reset
+                stage: V1
+                tests: [uart_smoke, uart_reset_test]
+                coverage:
+                  - type: covergroup
+                    path: uart_env.uart_reset_cg
 
-    plan = import_hjson("uart_testplan.hjson",
-                        substitutions={"baud": ["9600", "115200"]})
+Validate and inspect it::
 
-    db = NcdbUCIS("coverage.cdb")
-    db.setTestplan(plan)
-    NcdbWriter().write(db, "coverage.cdb")
+    covsight testplan validate uart.yaml
+    covsight testplan show uart.yaml
 
-Compute closure against the embedded testplan::
+Embed it in a database and compute closure::
 
-    from covsight.core.ncdb.testplan_closure import compute_closure, stage_gate_status
-    from covsight.core.ncdb.testplan import get_testplan
-
-    db = NcdbUCIS("coverage.cdb")
-    plan = db.getTestplan()
-    results = compute_closure(plan, db)
-
-    for r in results:
-        print(f"{r.testpoint.name:30s} {r.status.value}")
-
-    gate = stage_gate_status(results, "V2", plan)
-    print(gate["message"])
-
-CLI usage::
-
-    covsight testplan import coverage.cdb uart_testplan.hjson
+    covsight testplan import coverage.cdb uart.yaml
     covsight testplan closure coverage.cdb
-    covsight testplan export-junit coverage.cdb --out closure_results.xml
+
+Export a JUnit report for CI::
+
+    covsight testplan export-junit coverage.cdb --out results.xml
 
 -----------
 
@@ -64,52 +67,131 @@ CLI usage::
 Testplan format
 **********************
 
-A testplan is stored as ``testplan.json`` inside the NCDB ZIP and is also
-exportable as a standalone JSON file. The schema is::
+The preferred format is **YAML** (``$schema`` field enables editor validation).
+JSON and Hjson are also accepted by all commands.
 
-    {
-      "format_version": 1,
-      "source_file": "path/to/uart.hjson",
-      "import_timestamp": "2025-01-01T00:00:00+00:00",
-      "testpoints": [
-        {
-          "name": "uart_reset",
-          "stage": "V1",
-          "desc": "Verify reset behaviour",
-          "tests": ["uart_smoke", "uart_init_*"],
-          "tags": ["smoke"],
-          "na": false,
-          "source_template": ""
-        }
-      ],
-      "covergroups": [
-        {"name": "cg_uart_reset", "desc": "Reset coverage"}
-      ]
-    }
+A minimal example::
 
-Stages follow the OpenTitan V1 → V2 → V2S → V3 hierarchy; custom strings
-are also accepted and sort after V3 in gate evaluation.
+    $schema: "https://schema.covsight.io/testplan/v1"
+    format_version: 1
+    name: uart
+    goals:
+      - id: functional
+        title: Functional verification
+        testpoints:
+          - name: uart_reset
+            stage: V1
+            tests: [uart_smoke, uart_reset_test]
+            coverage:
+              - type: covergroup
+                path: uart_env.uart_reset_cg
+
+Stages follow the V1 → V2 → V2S → V3 hierarchy; custom strings are also
+accepted and sort after V3 in gate evaluation.
+
+-----------
+
+**************************
+Authoring and substitutions
+**************************
+
+Testplans support ``{key}`` substitution in test name templates.
+A list value generates the cartesian product of all combinations::
+
+    substitutions:
+      intf: [a, b, c]
+
+    testpoints:
+      - name: uart_init_{intf}
+        tests: ["uart_init_{intf}_test"]
+
+This expands into three testpoints, one per interface value.
+Substitution values can also be supplied on the CLI::
+
+    covsight testplan show uart.yaml --sub intf=a
 
 -----------
 
 **********************
-Importing Hjson
+Validating
 **********************
 
-Use :func:`~covsight.core.ncdb.testplan_hjson.import_hjson` to parse an OpenTitan
-``.hjson`` testplan (or a standard ``.json`` file)::
+Run validation before embedding a testplan::
 
-    plan = import_hjson(
-        "uart_testplan.hjson",
-        substitutions={
-            "uart":  ["uart0", "uart1"],
-            "mode":  ["loopback", "normal"],
-        },
-    )
+    covsight testplan validate uart.yaml
 
-The ``substitutions`` dict provides values for ``{key}`` placeholders in
-test name templates. A list value generates the cartesian product of all
-combinations.
+Validates against the JSON Schema **and** applies semantic checks
+(e.g. weight must be ≥ 1, binding types). Exits non-zero on any error.
+Multiple files can be validated in one invocation::
+
+    covsight testplan validate plan_v1.yaml plan_v2.yaml
+
+Use ``--strict`` to promote semantic warnings to errors::
+
+    covsight testplan validate uart.yaml --strict
+
+Machine-readable output for CI::
+
+    covsight testplan validate uart.yaml -of json | jq .passed
+
+-----------
+
+**********************
+Inspecting
+**********************
+
+Display the testplan tree::
+
+    covsight testplan show uart.yaml
+
+Filter by stage, goal status, owner, or tag::
+
+    covsight testplan show uart.yaml --stage V1
+    covsight testplan show uart.yaml --status in_progress
+    covsight testplan show uart.yaml --owner alice
+
+Limit depth and show coverage bindings::
+
+    covsight testplan show uart.yaml -d 2 --show-coverage
+
+Show only a section (``goals``, ``testpoints``, ``covergroups``)::
+
+    covsight testplan show uart.yaml -s goals
+
+Output as YAML or JSON for scripting::
+
+    covsight testplan show uart.yaml -of yaml
+    covsight testplan show uart.yaml -of json | jq .goals
+
+-----------
+
+**********************
+Stats
+**********************
+
+Print a summary of testpoint counts, coverage bindings, and goals::
+
+    covsight testplan stats uart.yaml
+
+JSON output for dashboards::
+
+    covsight testplan stats uart.yaml -of json
+
+-----------
+
+**********************
+Converting
+**********************
+
+Convert between YAML, JSON, and Hjson formats::
+
+    covsight testplan convert uart.hjson                  # → YAML (default)
+    covsight testplan convert uart.yaml -of json          # → JSON
+    covsight testplan convert uart.yaml -o out.json       # write to file
+
+Preserve ``imports`` without resolving them::
+
+    covsight testplan convert uart.yaml --no-resolve-imports
 
 -----------
 
@@ -141,6 +223,14 @@ testpoint against the test history stored in the database:
 
 Test name matching uses exact match, seed-suffix strip, and wildcard prefix strategies.
 
+CLI closure output with goal tree and coverage::
+
+    covsight testplan closure coverage.cdb --show-goals --show-coverage
+
+Filter by closure status::
+
+    covsight testplan closure coverage.cdb --filter-status NOT_RUN FAILING
+
 -----------
 
 **********************
@@ -159,6 +249,21 @@ a regression is ready to advance to the next stage::
 
 The gate passes when all testpoints at the target stage **and all stages
 below it** (V1 < V2 < V2S < V3) are CLOSED or N/A.
+
+-----------
+
+**********************
+Embedding and extracting
+**********************
+
+Embed a testplan in a ``.cdb`` (accepts YAML, JSON, or Hjson)::
+
+    covsight testplan import coverage.cdb uart.yaml
+
+Extract the embedded testplan back to a file::
+
+    covsight testplan export coverage.cdb -o uart_extracted.yaml
+    covsight testplan export coverage.cdb -of json
 
 -----------
 
@@ -185,23 +290,6 @@ Coverage and test failures can be suppressed with a
 
     db.setWaivers(ws)
     NcdbWriter().write(db, "coverage.cdb")
-
------------
-
-**********************
-Modes A and B
-**********************
-
-**Mode A (embedded)** — testplan stored inside the ``.cdb``::
-
-    db.setTestplan(plan)
-    NcdbWriter().write(db, "coverage.cdb")
-
-**Mode B (standalone)** — testplan kept as a separate file::
-
-    plan.save("uart_testplan_snapshot.json")
-    plan = Testplan.load("uart_testplan_snapshot.json")
-    results = compute_closure(plan, db)
 
 .. seealso::
 

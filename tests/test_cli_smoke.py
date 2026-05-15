@@ -14,3 +14,10 @@ def test_help():
     assert "convert" in result.stdout
     assert "merge" in result.stdout
     assert "show" in result.stdout
+
+
+def test_testplan_help():
+    result = subprocess.run(["covsight", "testplan", "--help"], capture_output=True, text=True)
+    assert result.returncode == 0
+    for sub in ("show", "validate", "stats", "convert", "import", "export", "closure", "export-junit"):
+        assert sub in result.stdout, f"testplan subcommand '{sub}' missing from --help"

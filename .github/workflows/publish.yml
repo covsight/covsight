@@ -1,0 +1,55 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ivpm and fetch dependencies
+        run: pip install ivpm && ivpm update
+
+      - name: Install covsight-core
+        run: pip install -e "packages/covsight-core[validate,hjson]"
+
+      - name: Install covsight
+        run: pip install -e ".[dev]"
+
+      - name: Test
+        run: pytest
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check dist/*
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
