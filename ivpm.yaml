@@ -6,3 +6,4 @@ package:
     deps: 
     - name: covsight-core
       url: https://github.com/covsight/covsight-core.git
+      anonymous: true
