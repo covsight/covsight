@@ -6,6 +6,48 @@ on:
       - 'v*'
 
 jobs:
+  gate:
+    # Release master switch. ONE file, above both platforms, decides who
+    # releases this repo:
+    #   https://dvkit.org/.well-known/release-authority.json
+    # Generated from /srv/forgejo/etc/sync-policy.toml by
+    # `git-sync emit-release-authority`, so GitHub and Forgejo cannot drift --
+    # there is only one copy for them to disagree about.
+    #
+    # The runner only READS it, over plain HTTPS with no credential: a workflow
+    # file is public and editable by anyone who can push, so nothing secret
+    # goes in one.
+    #
+    # `if:` on a job cannot reference a step in its own job, so the switch is
+    # resolved here and consumed via needs.gate.outputs.authority.
+    name: Release authority
+    runs-on: ubuntu-latest
+    outputs:
+      authority: ${{ steps.resolve.outputs.authority }}
+    steps:
+      - id: resolve
+        # The resolver is one line on purpose. A multi-line `python3 -c` script
+        # has to start at column 0, which terminates the YAML block scalar and
+        # silently corrupts the workflow.
+        run: |
+          url=https://dvkit.org/.well-known/release-authority.json
+          if ! body=$(curl -fsS --max-time 10 "$url"); then
+            # Fail CLOSED, but only make noise when a release was actually due:
+            # a missed release is recoverable, a wrong one is not.
+            case "$GITHUB_REF" in
+              refs/tags/v*)
+                echo "::error::release-authority switch unreachable; refusing to publish"
+                exit 1 ;;
+              *)
+                echo "authority=none" >> "$GITHUB_OUTPUT"
+                echo "switch unreachable on a non-tag ref; nothing to release"
+                exit 0 ;;
+            esac
+          fi
+          auth=$(printf '%s' "$body" | python3 -c 'import json,os,sys; d=json.load(sys.stdin); r=os.environ["GITHUB_REPOSITORY"]; print(d["repos"].get(r) or d["orgs"].get(r.split("/")[0]) or d["default"])')
+          echo "release authority for $GITHUB_REPOSITORY: $auth"
+          echo "authority=$auth" >> "$GITHUB_OUTPUT"
+
   test:
     name: Python tests
     runs-on: ubuntu-latest
@@ -32,7 +74,11 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: test
+    # Skips -- does not fail -- when the switch names the other side. A red
+    # build on the dormant side every time anyone tags would train people to
+    # ignore the signal, which is worse than no signal.
+    if: startsWith(github.ref, 'refs/tags/v') && needs.gate.outputs.authority == 'github'
+    needs: [gate, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -53,3 +99,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          # Idempotence net: with one switch and two possible publishers, a
+          # double-fire must be a no-op rather than a failure or a corruption.
+          skip-existing: true
