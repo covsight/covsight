@@ -1,0 +1,123 @@
+# Docs build for covsight/covsight on Forgejo Actions.
+#
+# THIS IS THE ONLY THING THAT PUBLISHES THESE DOCS. .github/workflows/docs.yml
+# builds them too, as a CI check, but its Pages deploy was deleted -- see
+# ~/Documents/dvkit-docs-publishing-design.md 5.9. dvkit.org owns all
+# documentation: <org>.github.io lands at dvkit.org/<org>/, and a repo's docs
+# land at dvkit.org/<org>/<repo>/. dvkit.org is a single Cloudflare Pages
+# project and a deploy replaces the WHOLE site, so there is exactly one
+# publisher for it.
+#
+# What happens after this job, all of it host-side:
+#
+#   docs-fetch covsight/covsight main        # artifact -> staging/
+#   (review over the tailnet on :8443)
+#   docs-promote / docs-deploy               # -> dvkit.org/covsight/covsight/
+#
+# The built HTML leaves as an ARTIFACT and nothing else. This job holds no
+# Cloudflare token and mounts nothing: a workflow file is public and editable by
+# anyone who can push, and the deploy credential is account-scoped.
+#
+# Five constraints this file is shaped by:
+#
+#  1. No third-party actions. A bare `uses:` resolves against code.forgejo.org
+#     (Forgejo's DEFAULT_ACTIONS_URL), not github.com, so actions/setup-python
+#     does not exist here. The runner's `ubuntu-latest` maps to
+#     catthehacker/ubuntu:act-22.04, which carries Python 3.10 -- sufficient,
+#     since pyproject requires >=3.10.
+#  2. `pip` in that image is 22.0.2 and predates PEP 660, so `pip install -e .`
+#     fails outright ("build backend is missing the build_editable hook").
+#     Hence the pip upgrade, and a plain non-editable install.
+#  3. NO ivpm, and NO GitHub. The GitHub workflow runs `ivpm update` to fetch
+#     covsight-core from github.com and installs it from the source checkout.
+#     Doing that here would put GitHub on the critical path of a Forgejo build
+#     -- the coupling this whole migration exists to remove (docs-publishing
+#     design F5, which bitsbytesgates still has). covsight-core has been
+#     published to PyPI since 2026-08-23, so this installs it from there
+#     instead: no ivpm, no credential, no GitHub.
+#
+#     Consequence, and it is the right trade for docs: this builds against the
+#     RELEASED covsight-core, not the working tree. If a doc page depends on
+#     unreleased covsight-core behaviour, release covsight-core first.
+#  4. NO release-authority gate. That switch decides who publishes PACKAGES to
+#     PyPI/npm/Marketplace. Docs are not a release: they publish from Forgejo to
+#     dvkit.org unconditionally, whichever side holds release authority. Adding
+#     the gate here would silently stop docs whenever the switch said "github".
+#  5. The artifact name is the `docs-<org>-<repo>` convention docs-fetch matches
+#     on, and `path: .../**` makes the build directory the ZIP ROOT --
+#     docs-fetch refuses an artifact with no index.html at the top level.
+#
+# `covsight` and `covsight-core` share the `covsight.` namespace without either
+# owning `covsight/__init__.py` (core ships covsight/core/, this ships
+# covsight/cli/ and covsight/analysis/), so installing both is a merge rather
+# than a shadow. If an `__init__.py` ever appears in either, one will silently
+# hide the other and the API reference will lose half its pages.
+
+name: Docs
+
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # setuptools_scm reads the tag; a depth-1 checkout without tags makes
+          # every build look like an untagged dev version.
+          fetch-depth: 0
+
+      - name: Check for internal identifiers in tracked files
+        # This repo is published to git.dvkit.org and mirrored to GitHub, so
+        # anything committed here is public. Internal host names, tailnet
+        # addresses and CGNAT-range IPs must not appear in tracked files -- if a
+        # build ever needs one, it belongs in a repository secret, which is
+        # masked in logs.
+        run: |
+          pattern='perch-char\.ts\.net|\.ts\.net|a9550|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]+\.[0-9]+'
+          if git grep -nIE "$pattern" -- . ':!.forgejo/workflows/docs.yml' ; then
+            echo "::error::internal identifier found in a tracked file (see matches above)"
+            exit 1
+          fi
+          echo "OK: no internal identifiers in tracked files"
+
+      - name: Install dependencies
+        # covsight-core from PyPI, not from an ivpm checkout -- see note 3.
+        run: |
+          python3 -m pip install -q --upgrade pip setuptools wheel
+          python3 -m pip install -q "covsight-core[validate,hjson]"
+          python3 -m pip install -q .
+          python3 -m pip install -q -r docs/requirements.txt
+
+      - name: Both halves of the covsight namespace import
+        # autodoc reports a failed import as a warning and carries on, so a
+        # broken install shows up as a doc set that is quietly missing its API
+        # reference rather than as a failed build. Fail here instead.
+        run: python3 -c "import covsight.cli, covsight.core; print('covsight.cli and covsight.core both import')"
+
+      - name: Build HTML docs
+        run: sphinx-build -b html docs/source docs/_build/html
+
+      - name: Sanity-check the build
+        # Sphinx exits 0 on a build that produced almost nothing, and an empty
+        # doc set is worse than a failed one because it deploys.
+        run: |
+          test -s docs/_build/html/index.html \
+            || { echo "::error::no index.html in the build output"; exit 1; }
+          n=$(find docs/_build/html -name '*.html' | wc -l)
+          echo "generated pages: $n"
+          [ "$n" -ge 30 ] || { echo "::error::only $n pages built; expected ~38. Refusing to call this a doc set."; exit 1; }
+
+      - name: Upload docs
+        # Consumed by the host-side poller: `docs-fetch covsight/covsight main`.
+        # Note the explicit branch -- docs-fetch defaults to `master` and this
+        # repo's default branch is `main`.
+        uses: forgejo/upload-artifact@v4
+        with:
+          name: docs-covsight-covsight
+          path: docs/_build/html/**
+          if-no-files-found: error
