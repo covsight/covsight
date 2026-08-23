@@ -1,19 +1,34 @@
 name: Docs
 
+# BUILD ONLY. This workflow does not publish anything, by design.
+#
+# Docs for every dvkit project are published by FORGEJO, not GitHub. The
+# host-side poller (~/dvkit-docs/bin/docs-fetch) reads build artifacts from the
+# Forgejo API, promotes them, and deploys with a Cloudflare token that never
+# enters a job container. A Cloudflare Pages deployment replaces the WHOLE
+# site, so dvkit.org is a single Pages space shared by every project -- there
+# is exactly one publisher for it, and it is not here.
+#
+# What used to be here was a `deploy-pages` job. It was first converted from
+# branch-driven to tag-driven (so a mirrored push could not republish as a side
+# effect of a sync), and then removed outright: GitHub Pages would be a second,
+# divergent copy of the docs, and the artifact this job used to upload for the
+# poller was consumed by nothing, because the poller only ever looks at Forgejo.
+#
+# The Forgejo-side docs job that actually publishes lives in
+# .forgejo/workflows/ and uploads `docs-covsight-covsight`.
+#
+# This job stays because a docs build that breaks should still fail a push.
+
 on:
   push:
-    branches: [main, master]   # build only -- the deploy job is gated below
-    tags: ['v*']               # build + deploy
-  workflow_dispatch:           # build + deploy, on demand
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -42,36 +57,3 @@ jobs:
 
       - name: Build docs
         run: sphinx-build -b html docs/source docs/_build/html
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/_build/html
-
-      # Plain artifact alongside the Pages one, named to the <org>-<repo>
-      # convention the host-side dvkit.org docs poller consumes. Uploaded on
-      # every build so the eventual dvkit.org/covsight/covsight/ path has a
-      # source, independent of whether GitHub Pages is still in the picture.
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs-covsight-covsight
-          path: docs/_build/html
-          if-no-files-found: error
-
-  deploy:
-    # Publication is TAG-DRIVEN. See the note in covsight.github.io's
-    # deploy.yml: Forgejo mirrors main to GitHub automatically, so a
-    # branch-triggered deploy would republish docs as a side effect of a sync.
-    # The build job still runs on every push; only the publish is gated.
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
