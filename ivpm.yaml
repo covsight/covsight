@@ -7,3 +7,17 @@ package:
     - name: covsight-core
       url: https://github.com/covsight/covsight-core.git
       anonymous: true
+    # dv-flow package (covsight.dvflow) and its Verilator end-to-end tests
+    - name: dv-flow-mgr
+      url: https://github.com/dv-flow/dv-flow-mgr.git
+      anonymous: true
+    - name: dv-flow-libhdlsim
+      url: https://github.com/dv-flow/dv-flow-libhdlsim.git
+      anonymous: true
+    - name: pytest
+      src: pypi
+    - { name: verilator, src: gh-rls, cache: true, url: https://github.com/edapack/verilator-bin }
+
+  env:
+  - name: PATH
+    path-prepend: "${IVPM_PACKAGES}/verilator/bin"

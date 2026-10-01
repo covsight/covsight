@@ -1,0 +1,51 @@
+# Verilator coverage -> covsight NCDB, with dv-flow.
+#
+#   dfm run merged          # build, run two seeds, import, merge
+#   covsight show summary rundir/example.merged/merged.cdb
+#
+# Needs: dv-flow-mgr, dv-flow-libhdlsim, covsight (all pip-installed so dfm
+# can discover the hdlsim and covsight packages) and verilator on PATH.
+package:
+  name: example
+  imports:
+  - name: hdlsim
+  - name: covsight
+
+  tasks:
+  - name: rtl
+    uses: std.FileSet
+    with:
+      type: systemVerilogSource
+      include: "cov_top.sv"
+
+  - name: img
+    uses: hdlsim.vlt.SimImage
+    needs: [rtl]
+    with:
+      top: [cov_top]
+      cov: full            # none | func | code | full
+
+  - name: run_s1
+    uses: hdlsim.vlt.SimRun
+    needs: [img]
+    with: {mode: test, plusargs: ["verilator+seed+1"]}
+  - name: check_s1
+    uses: hdlsim.SimCheck
+    needs: [run_s1]
+
+  - name: run_s2
+    uses: hdlsim.vlt.SimRun
+    needs: [img]
+    with: {mode: test, plusargs: ["verilator+seed+2"]}
+  - name: check_s2
+    uses: hdlsim.SimCheck
+    needs: [run_s2]
+
+  # One NCDB per test, carrying the case name, seed and verdict.
+  - name: cov
+    uses: covsight.Import
+    needs: [check_s1, check_s2]
+
+  - name: merged
+    uses: covsight.Merge
+    needs: [cov]

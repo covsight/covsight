@@ -21,14 +21,23 @@ covsight = "covsight.cli.main:main"
 text = "covsight.analysis.report_text:TextReportPlugin"
 json = "covsight.analysis.report_json:JsonReportPlugin"
 
+# dv-flow package 'covsight' (tasks covsight.Import / covsight.Merge).
+# __ext__ only returns file paths, so this is inert without dv-flow-mgr.
+[project.entry-points."dv_flow.mgr"]
+covsight = "covsight.dvflow.__ext__"
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"covsight.dvflow" = ["*.yaml"]
 
 [tool.setuptools_scm]
 root = "."
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov"]
+dvflow = ["dv-flow-mgr"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

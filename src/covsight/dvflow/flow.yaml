@@ -1,0 +1,62 @@
+package:
+  name: covsight
+  doc: |
+    Coverage tasks backed by covsight. Import turns simulator coverage
+    databases into covsight NCDB files (one per test, carrying the test's
+    name, seed and verdict); Merge combines NCDB files.
+
+    Inputs come from dv-flow-libhdlsim: a SimRunResult / TestResult /
+    SuiteResult item's `simCovDb` artifacts, or a bare `simCovDb` FileSet.
+    The reader is chosen from the FileSet's `format=` attribute
+    (vlt-dat -> Verilator coverage.dat).
+
+  tasks:
+  - export: Import
+    doc: Convert coverage databases to covsight NCDB (filetype covsightNCDB)
+    pytask: covsight.dvflow.cov_import.Import
+    uptodate: covsight.dvflow.cov_import.UpToDate
+    consumes:
+    - type: hdlsim.TestResult
+    - type: hdlsim.SimRunResult
+    - type: hdlsim.SuiteResult
+    - filetype: simCovDb
+    produces:
+    - type: std.FileSet
+      filetype: covsightNCDB
+    with:
+      test_name:
+        doc: |
+          Test name recorded in the database. Defaults to the case name from
+          the TestResult/SimRunResult. With several inputs, `_<n>` is appended.
+        type: str
+        value: ""
+      seed:
+        doc: Seed recorded in the database (defaults to the run's seed)
+        type: str
+        value: ""
+      status:
+        doc: Test outcome recorded (pass/fail/error); defaults to the verdict
+        type: str
+        value: ""
+      on_unsupported:
+        doc: What to do with a database in an unsupported format (error/warn/skip)
+        type: str
+        value: "error"
+      include_std:
+        doc: Keep coverage of Verilator's built-in std package
+        type: bool
+        value: false
+
+  - export: Merge
+    doc: Merge covsightNCDB databases into a single NCDB
+    pytask: covsight.dvflow.cov_merge.Merge
+    consumes:
+    - filetype: covsightNCDB
+    produces:
+    - type: std.FileSet
+      filetype: covsightNCDB
+    with:
+      output:
+        doc: Output file name, relative to the task's run directory
+        type: str
+        value: "merged.cdb"
