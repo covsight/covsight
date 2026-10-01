@@ -1,0 +1,77 @@
+# SystemC::Coverage-3
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl105n36tlinepagev_line/semaphoreoblockS105hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl106n43tlinepagev_line/semaphoreoblockS106hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl107n47tlinepagev_line/semaphoreoblockS107hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl109n14tlinepagev_line/semaphoreoblockS109-110hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl113n19tlinepagev_line/semaphoreoblockS113-114hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl117n10tlinepagev_line/semaphoreoblockS117,119,126-131hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl122n34texprpagev_expr/semaphoreo((m_keyCount >= keyCount)==0) => 0hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl122n34texprpagev_expr/semaphoreo((m_keyCount >= keyCount)==1 && (m_nextKeyCount > m_keyCount)==1) => 1hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl122n34texprpagev_expr/semaphoreo((m_nextKeyCount > m_keyCount)==0) => 0hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl122n7tbranchpagev_branch/semaphoreoifS122-124hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl122n8tbranchpagev_branch/semaphoreoelsehstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl135n18tlinepagev_line/semaphoreoblockS135,137-138hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl136n7tbranchpagev_branch/semaphoreoifS136hstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl136n8tbranchpagev_branch/semaphoreoelsehstd::semaphore__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl143n3tlinepagev_line/processoblockS143hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl156n29tlinepagev_line/processoblockS156-157,159,161hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl164n29tlinepagev_line/processoblockS164,166hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl170n20tlinepagev_line/processoblockS170,172hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl178n19tlinepagev_line/processoblockS178-179hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl186n19tlinepagev_line/processoblockS186-187hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl190n10tlinepagev_line/processoblockS190,192hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl192n34texprpagev_expr/processo((status() == process::FINISHED)==0 && (status() == process::KILLED)==0) => 0hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl192n34texprpagev_expr/processo((status() == process::FINISHED)==1) => 1hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl192n34texprpagev_expr/processo((status() == process::KILLED)==1) => 1hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl196n17tlinepagev_line/processoblockS196,198hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl198n7tlinepagev_line/processoblockS198-199hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl200n10tbranchpagev_branch/processoelsehstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl200n9tbranchpagev_branch/processoifS200hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl233n21tlinepagev_line/processoblockS233,235,237-238hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl241n19tlinepagev_line/processoblockS241-242hstd::process__Vclpkg' 0
+C 'f/opt/verilator/share/verilator/include/verilated_std.svl247n16tlinepagev_line/stdoblockS247-248hstd' 0
+C 'fcov_top.svl11n11ttogglepagev_toggle/cov_topostate:0->1hcov_top' 1
+C 'fcov_top.svl11n11ttogglepagev_toggle/cov_topostate:1->0hcov_top' 1
+C 'fcov_top.svl11n19tlinepagev_line/cov_topoblockS11hcov_top' 1
+C 'fcov_top.svl13n19texprpagev_expr/cov_topo(clk==0) => 1hcov_top' 10
+C 'fcov_top.svl13n19texprpagev_expr/cov_topo(clk==1) => 0hcov_top' 10
+C 'fcov_top.svl13n3tlinepagev_line/cov_topoblockS13hcov_top' 20
+C 'fcov_top.svl15n3tlinepagev_line/cov_topoblockS15-16hcov_top' 10
+C 'fcov_top.svl17n18texprpagev_expr/cov_topo(count[0]==0) => 0hcov_top' 5
+C 'fcov_top.svl17n18texprpagev_expr/cov_topo(count[0]==1 && count[1]==1) => 1hcov_top' 2
+C 'fcov_top.svl17n18texprpagev_expr/cov_topo(count[1]==0) => 0hcov_top' 6
+C 'fcov_top.svl17n5tbranchpagev_branch/cov_topoifS17-18hcov_top' 2
+C 'fcov_top.svl17n6tbranchpagev_branch/cov_topoelseS20hcov_top' 8
+C 'fcov_top.svl23n3tlinepagev_line/cov_topoblockS23-24hcov_top' 10
+C 'fcov_top.svl24n5tfsm_statepagev_fsm_state/cov_topocov_top.state::BUSYFvcov_top.stateFtBUSYhcov_top.cov_top' 1
+C 'fcov_top.svl24n5tfsm_statepagev_fsm_state/cov_topocov_top.state::IDLEFvcov_top.stateFtIDLEhcov_top.cov_top' 1
+C 'fcov_top.svl25n11tlinepagev_line/cov_topocaseS25hcov_top' 6
+C 'fcov_top.svl25n13tbranchpagev_branch/cov_topoifS25hcov_top' 1
+C 'fcov_top.svl25n14tbranchpagev_branch/cov_topoelsehcov_top' 5
+C 'fcov_top.svl26n11tlinepagev_line/cov_topocaseS26hcov_top' 4
+C 'fcov_top.svl26n13tbranchpagev_branch/cov_topoifS26hcov_top' 1
+C 'fcov_top.svl26n14tbranchpagev_branch/cov_topoelsehcov_top' 3
+C 'fcov_top.svl40n13tlinepagev_line/cov_topoblockS40hcov_top' 1
+C 'fcov_top.svl42n3tuserpagev_user/cov_topocoverS42hcov_top' 1
+C 'fcov_top.svl44n3tlinepagev_line/cov_topoblockS44,49-51hcov_top' 1
+C 'fcov_top.svl45n5tbranchpagev_branch/cov_topoifS45-47hcov_top' 0
+C 'fcov_top.svl45n6tbranchpagev_branch/cov_topoelsehcov_top' 1
+C 'fcov_top.svl6n15ttogglepagev_toggle/cov_topoclk:0->1hcov_top' 10
+C 'fcov_top.svl6n15ttogglepagev_toggle/cov_topoclk:1->0hcov_top' 10
+C 'fcov_top.svl6n21tlinepagev_line/cov_topoblockS6hcov_top' 1
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[0]:0->1hcov_top' 5
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[0]:1->0hcov_top' 5
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[1]:0->1hcov_top' 3
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[1]:1->0hcov_top' 2
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[2]:0->1hcov_top' 1
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[2]:1->0hcov_top' 1
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[3]:0->1hcov_top' 1
+C 'fcov_top.svl7n15ttogglepagev_toggle/cov_topocount[3]:1->0hcov_top' 0
+C 'fcov_top.svl7n23tlinepagev_line/cov_topoblockS7hcov_top' 1
+C 'fcov_top.svl8n15ttogglepagev_toggle/cov_topoflag:0->1hcov_top' 2
+C 'fcov_top.svl8n15ttogglepagev_toggle/cov_topoflag:1->0hcov_top' 2
+C 'fcov_top.svl8n22tlinepagev_line/cov_topoblockS8hcov_top' 1
+C 'tcovergrouppagev_covergroup/cgfcov_top.svl32n12binhit_lowhcg.cp_flag.hit_low' 8
+C 'tcovergrouppagev_covergroup/cgfcov_top.svl33n12binhit_highhcg.cp_flag.hit_high' 2
+C 'tcovergrouppagev_covergroup/cgfcov_top.svl36n12binlohcg.cp_count.lo' 8
+C 'tcovergrouppagev_covergroup/cgfcov_top.svl37n12binneverhcg.cp_count.never' 0

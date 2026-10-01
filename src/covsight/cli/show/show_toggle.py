@@ -1,180 +1,124 @@
 """
 Show Toggle Command
 
-Displays toggle coverage information from the UCIS database.
-Toggle coverage tracks signal transitions (0->1 and 1->0) for signals in the design.
+Toggle coverage per signal: whether each bit has risen (0->1) and fallen
+(1->0).  A signal is fully toggled when every bit has done both.
 """
-from typing import Any, Dict
+from collections import OrderedDict
+from typing import Any, Dict, TextIO
+
 from covsight.cli.show_base import ShowBase
 
 
 class ShowToggle(ShowBase):
-    """
-    Display toggle coverage information.
-    
-    Shows toggle coverage for signals, indicating which signals have
-    toggled from 0 to 1 and from 1 to 0 during simulation.
-    """
-    
+
     def get_data(self) -> Dict[str, Any]:
-        """
-        Extract toggle coverage information.
-        
-        Returns:
-            Dictionary containing toggle coverage data
-        """
-        result = {
-            "database": self.args.db,
-            "signals": [],
-            "summary": {
-                "total_signals": 0,
-                "fully_toggled": 0,
-                "partially_toggled": 0,
-                "not_toggled": 0,
-                "coverage_percentage": 0.0
-            }
-        }
-        
-        total_signals = 0
-        fully_toggled = 0
-        partially_toggled = 0
-        
-        # Try to find toggle coverage in the database
-        try:
-            # Walk through all scopes looking for toggle coverage
-            for scope in self._walk_scopes(self.db.getDesignRoot()):
-                if scope.m_type == ScopeTypeT.TOGGLE:
-                    toggle_data = self._process_toggle_scope(scope)
-                    if toggle_data:
-                        result["signals"].append(toggle_data)
-                        total_signals += 1
-                        
-                        # Check if both directions toggled
-                        if toggle_data.get("toggle_0to1", False) and toggle_data.get("toggle_1to0", False):
-                            fully_toggled += 1
-                        elif toggle_data.get("toggle_0to1", False) or toggle_data.get("toggle_1to0", False):
-                            partially_toggled += 1
-        except Exception as e:
-            # If toggle coverage is not available, provide informative message
-            result["note"] = "No toggle coverage data found in database. Toggle coverage may not be enabled or database may contain only functional coverage."
-            result["error"] = str(e)
-        
-        # Update summary
-        result["summary"]["total_signals"] = total_signals
-        result["summary"]["fully_toggled"] = fully_toggled
-        result["summary"]["partially_toggled"] = partially_toggled
-        result["summary"]["not_toggled"] = total_signals - fully_toggled - partially_toggled
-        
-        if total_signals > 0:
-            # Coverage is based on signals that toggled in both directions
-            result["summary"]["coverage_percentage"] = (fully_toggled / total_signals) * 100.0
-        
-        return result
-    
-    def _walk_scopes(self, scope, depth=0):
-        """Recursively walk through scope hierarchy."""
-        if scope is None:
-            return
-        
-        yield scope
-        
-        # Recursively process children
-        try:
-            child = scope.getChild()
-            while child:
-                yield from self._walk_scopes(child, depth + 1)
-                child = child.getNextSibling()
-        except:
-            pass
-    
-    def _process_toggle_scope(self, scope):
-        """Process a toggle scope and extract coverage data."""
-        try:
-            name = scope.getScopeName() if hasattr(scope, 'getScopeName') else str(scope)
-            
-            # Track toggle states
-            toggle_0to1 = False
-            toggle_1to0 = False
-            count_0to1 = 0
-            count_1to0 = 0
-            
-            # Try to get toggle coverage data
-            try:
-                coveritem = scope.getCoveritem()
-                if coveritem:
-                    # Toggle coverage typically has 2 bins: 0->1 and 1->0
-                    num_bins = coveritem.getNumBins()
-                    for i in range(num_bins):
-                        bin = coveritem.getBin(i)
-                        if bin:
-                            count = bin.getCount()
-                            # Check bin type (0->1 or 1->0)
-                            # This is simplified - actual implementation would check bin flags
-                            if i == 0:  # Assume first bin is 0->1
-                                count_0to1 = count
-                                toggle_0to1 = count > 0
-                            elif i == 1:  # Assume second bin is 1->0
-                                count_1to0 = count
-                                toggle_1to0 = count > 0
-            except:
-                pass
-            
-            # Determine toggle status
-            if toggle_0to1 and toggle_1to0:
-                status = "full"
-            elif toggle_0to1 or toggle_1to0:
-                status = "partial"
+        from covsight.analysis.code_coverage import (
+            CodeCoverage, parse_toggle_bin, stats_dict,
+        )
+
+        cc = CodeCoverage(self.db)
+        signals: "OrderedDict[int, Dict]" = OrderedDict()
+        for it in cc.items:
+            if it.kind != "toggle":
+                continue
+            sig = signals.get(id(it.scope))
+            if sig is None:
+                name = it.scope_name
+                sig = signals[id(it.scope)] = {
+                    "signal": "%s.%s" % (it.instance, name) if it.instance else name,
+                    "instance": it.instance,
+                    "file": it.file,
+                    "line": it.line,
+                    "bits": OrderedDict(),
+                    "bins": [],
+                }
+            parsed = parse_toggle_bin(it.name)
+            if parsed is None:
+                # Not a transition name; still a toggle bin that counts.
+                sig["bins"].append({"name": it.name, "count": it.count,
+                                    "covered": it.covered})
+                continue
+            bit, frm, to = parsed
+            entry = sig["bits"].setdefault(bit if bit is not None else "", {})
+            if (frm, to) == ("0", "1"):
+                entry["rise"] = entry.get("rise", 0) + it.count
+                entry["rise_covered"] = entry.get("rise_covered", False) or it.covered
+            elif (frm, to) == ("1", "0"):
+                entry["fall"] = entry.get("fall", 0) + it.count
+                entry["fall_covered"] = entry.get("fall_covered", False) or it.covered
             else:
-                status = "none"
-            
-            return {
-                "name": name,
-                "toggle_0to1": toggle_0to1,
-                "toggle_1to0": toggle_1to0,
-                "count_0to1": count_0to1,
-                "count_1to0": count_1to0,
-                "status": status
-            }
-        except Exception as e:
-            return None
-    
-    def _format_text(self, data: Dict[str, Any]) -> str:
-        """Format data as human-readable text."""
-        lines = []
-        lines.append("=" * 60)
-        lines.append("TOGGLE COVERAGE REPORT")
-        lines.append("=" * 60)
-        lines.append("")
-        
-        summary = data.get("summary", {})
-        lines.append(f"Total Signals:      {summary.get('total_signals', 0)}")
-        lines.append(f"Fully Toggled:      {summary.get('fully_toggled', 0)}")
-        lines.append(f"Partially Toggled:  {summary.get('partially_toggled', 0)}")
-        lines.append(f"Not Toggled:        {summary.get('not_toggled', 0)}")
-        lines.append(f"Coverage:           {summary.get('coverage_percentage', 0.0):.2f}%")
-        lines.append("")
-        
-        if "note" in data:
-            lines.append("Note: " + data["note"])
-            lines.append("")
-        
-        signals = data.get("signals", [])
-        if signals:
-            lines.append("Signal Toggle Status:")
-            lines.append("-" * 60)
-            lines.append(f"{'Signal':<30} {'0->1':<8} {'1->0':<8} Status")
-            lines.append("-" * 60)
-            
-            for signal in signals[:50]:  # Limit to first 50 for readability
-                name = signal.get('name', 'unknown')[:28]
-                t01 = "✓" if signal.get('toggle_0to1', False) else "✗"
-                t10 = "✓" if signal.get('toggle_1to0', False) else "✗"
-                status = signal.get('status', 'unknown')
-                lines.append(f"{name:<30} {t01:<8} {t10:<8} {status}")
-            
-            if len(signals) > 50:
-                lines.append(f"... and {len(signals) - 50} more signals")
-        else:
-            lines.append("No toggle coverage found.")
-        
-        return "\n".join(lines)
+                entry.setdefault("other", {})["%s->%s" % (frm, to)] = it.count
+
+        rows = []
+        n_full = n_partial = 0
+        for sig in signals.values():
+            bits = []
+            untoggled = []
+            full = True
+            any_hit = False
+            for bit, e in sig["bits"].items():
+                rise = e.get("rise_covered", False)
+                fall = e.get("fall_covered", False)
+                full = full and rise and fall
+                dirs = [d for d, ok in (("0->1", rise), ("1->0", fall)) if not ok]
+                if dirs:
+                    untoggled.append(("[%s] " % bit if bit else "") + ",".join(dirs))
+                any_hit = any_hit or rise or fall or any(e.get("other", {}).values())
+                b = {"bit": bit or None, "rise": e.get("rise", 0),
+                     "fall": e.get("fall", 0), "toggled": rise and fall}
+                if "other" in e:
+                    b["other"] = e["other"]
+                bits.append(b)
+            for b in sig["bins"]:
+                full = full and b["covered"]
+                any_hit = any_hit or b["covered"]
+                if not b["covered"]:
+                    untoggled.append(b["name"])
+            status = "full" if full else ("partial" if any_hit else "none")
+            n_full += status == "full"
+            n_partial += status == "partial"
+            if getattr(self.args, "uncovered", False) and status == "full":
+                continue
+            row = OrderedDict(signal=sig["signal"], status=status,
+                              width=max(len(bits), 1))
+            if sig["file"]:
+                row["file"] = sig["file"]
+                row["line"] = sig["line"]
+            row["untoggled"] = untoggled
+            row["bits"] = bits
+            if sig["bins"]:
+                row["bins"] = sig["bins"]
+            rows.append(row)
+
+        bins = cc.by_kind(("toggle",))["toggle"]
+        return {
+            "database": self.args.db,
+            "summary": {
+                "total_signals": len(signals),
+                "fully_toggled": n_full,
+                "partially_toggled": n_partial,
+                "not_toggled": len(signals) - n_full - n_partial,
+                "bins": stats_dict(bins),
+                "coverage_percentage": round(bins.coverage_pct, 2),
+            },
+            "signals": rows,
+        }
+
+    def _write_text(self, data: Dict[str, Any], fp: TextIO):
+        s = data["summary"]
+        fp.write("Toggle coverage: %s\n\n" % data["database"])
+        if not s["total_signals"]:
+            fp.write("No toggle coverage in this database.\n")
+            return
+        fp.write("Signals: %d (full %d, partial %d, none %d)\n" % (
+            s["total_signals"], s["fully_toggled"], s["partially_toggled"],
+            s["not_toggled"]))
+        fp.write("Bins:    %.2f%% (%d/%d)\n\n" % (
+            s["bins"]["coverage"], s["bins"]["covered"], s["bins"]["total"]))
+        width = max([len(r["signal"]) for r in data["signals"]] + [6])
+        fp.write("%-*s  %-7s  %s\n" % (width, "Signal", "Status", "Untoggled"))
+        fp.write("%s  %s  %s\n" % ("-" * width, "-" * 7, "-" * 9))
+        for r in data["signals"]:
+            fp.write(("%-*s  %-7s  %s" % (width, r["signal"], r["status"],
+                                           "; ".join(r["untoggled"]))).rstrip() + "\n")

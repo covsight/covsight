@@ -72,12 +72,43 @@ Replace the merge step if your tests produce ``.dat`` files:
     - name: Merge Verilator coverage
       run: covsight merge --input-format vltcov -o merged.ncdb tests/*/coverage.dat
 
-Cobertura Upload
-================
+Cobertura: Pull-Request Coverage Summary
+=========================================
 
-If you prefer Cobertura (e.g. for GitHub code coverage annotations):
+Most GitHub coverage actions read Cobertura XML.  The steps below export it
+and post a line/branch coverage table on the pull request.
+``--source-root`` makes file paths relative to the checkout, which is what
+the actions (and GitHub's file links) expect.
 
 .. code-block:: yaml
 
-    - name: Export Cobertura
-      run: covsight show code-coverage merged.ncdb --output-format cobertura > coverage.xml
+    permissions:
+      pull-requests: write
+
+    steps:
+      # ... checkout, run tests, merge (as above) ...
+
+      - name: Export Cobertura
+        run: >
+          covsight show code-coverage merged.ncdb
+          --output-format cobertura
+          --source-root ${{ github.workspace }}
+          -o coverage.xml
+
+      - name: Coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.xml
+          format: markdown
+          output: both
+          thresholds: "60 80"
+
+      - name: Comment on the pull request
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: code-coverage-results.md
+
+The Cobertura file holds line and branch coverage only.  Toggle, expression
+and FSM coverage, and functional coverage, are in ``covsight show summary``
+and ``covsight report``.

@@ -1,144 +1,109 @@
 """
 Show Assertions Command
 
-Displays assertion coverage information from the UCIS database.
-Assertions are design checks that verify specific properties or conditions.
+Cover directives (``cover property``) and assertions.
+
+* A cover directive is *covered* when its cover count reaches its goal.
+* An assertion is *failed* if it has any failure count, *passed* if it has a
+  pass count, and *not exercised* otherwise.  Vacuous, attempt and other
+  counts are reported as recorded.
 """
-from typing import Any, Dict
+from collections import OrderedDict
+from typing import Any, Dict, TextIO
+
 from covsight.cli.show_base import ShowBase
+
+# CoverTypeT name -> key in the per-assertion "counts" dict
+_COUNT_KEYS = OrderedDict([
+    ("COVERBIN", "cover"), ("ASSERTBIN", "fail"), ("FAILBIN", "fail"),
+    ("PASSBIN", "pass"), ("VACUOUSBIN", "vacuous"), ("DISABLEDBIN", "disabled"),
+    ("ATTEMPTBIN", "attempt"), ("ACTIVEBIN", "active"),
+    ("PEAKACTIVEBIN", "peak_active"),
+])
 
 
 class ShowAssertions(ShowBase):
-    """
-    Display assertion coverage information.
-    
-    Shows coverage for concurrent assertions (SVA), PSL assertions,
-    and other assertion types captured in the UCIS database.
-    """
-    
+
     def get_data(self) -> Dict[str, Any]:
-        """
-        Extract assertion coverage information.
-        
-        Returns:
-            Dictionary containing assertion coverage data
-        """
-        result = {
+        from covsight.analysis.code_coverage import walk_scopes
+        from covsight.core.api import CoverTypeT, ScopeTypeT
+
+        rows = []
+        tally = {"cover": [0, 0], "assert": [0, 0, 0]}  # covered,total / pass,fail,none
+        for inst, scope in walk_scopes(self.db):
+            st = scope.getScopeType()
+            if st not in (ScopeTypeT.COVER, ScopeTypeT.ASSERT):
+                continue
+            counts: Dict[str, int] = OrderedDict()
+            covered = False
+            for ci in scope.coverItems(CoverTypeT.ALL):
+                cd = ci.getCoverData()
+                try:
+                    tname = CoverTypeT(cd.type).name
+                except ValueError:
+                    tname = str(cd.type)
+                key = _COUNT_KEYS.get(tname, tname.lower())
+                counts[key] = counts.get(key, 0) + int(cd.data or 0)
+                if tname == "COVERBIN" and cd.data >= max(cd.at_least or 0, 1):
+                    covered = True
+
+            name = scope.getScopeName()
+            row = OrderedDict(name="%s.%s" % (inst, name) if inst else name,
+                              kind="cover" if st == ScopeTypeT.COVER else "assert")
+            if row["kind"] == "cover":
+                row["status"] = "covered" if covered else "uncovered"
+                tally["cover"][0] += covered
+                tally["cover"][1] += 1
+            else:
+                if counts.get("fail", 0) > 0:
+                    row["status"] = "failed"
+                    tally["assert"][1] += 1
+                elif counts.get("pass", 0) > 0 or counts.get("cover", 0) > 0:
+                    row["status"] = "passed"
+                    tally["assert"][0] += 1
+                else:
+                    row["status"] = "not_exercised"
+                    tally["assert"][2] += 1
+            row["counts"] = counts
+            si = scope.getSourceInfo()
+            if si is not None and si.file is not None:
+                row["file"] = si.file.getFileName()
+                row["line"] = si.line
+            rows.append(row)
+
+        n_cov, n_cov_total = tally["cover"]
+        n_pass, n_fail, n_none = tally["assert"]
+        return {
             "database": self.args.db,
-            "assertions": [],
             "summary": {
-                "total_assertions": 0,
-                "passed_assertions": 0,
-                "failed_assertions": 0,
-                "coverage_percentage": 0.0
-            }
+                "cover": {
+                    "total": n_cov_total, "covered": n_cov,
+                    "coverage": round(100.0 * n_cov / n_cov_total, 2) if n_cov_total else 0.0,
+                },
+                "assert": {
+                    "total": n_pass + n_fail + n_none, "passed": n_pass,
+                    "failed": n_fail, "not_exercised": n_none,
+                },
+            },
+            "assertions": rows,
         }
-        
-        total = 0
-        passed = 0
-        
-        # Try to find assertion coverage in the database
-        # Assertions may be stored as coveritems with type UCIS_ASSERT
-        try:
-            # Walk through all scopes looking for assertions
-            for scope in self._walk_scopes(self.db.getDesignRoot()):
-                if scope.m_type == ScopeTypeT.ASSERT:
-                    assertion_data = self._process_assertion_scope(scope)
-                    if assertion_data:
-                        result["assertions"].append(assertion_data)
-                        total += 1
-                        if assertion_data.get("hit", False):
-                            passed += 1
-        except Exception as e:
-            # If assertion coverage is not available, provide informative message
-            result["note"] = "No assertion coverage data found in database. Assertions may not be enabled or database may contain only functional coverage."
-            result["error"] = str(e)
-        
-        # Update summary
-        result["summary"]["total_assertions"] = total
-        result["summary"]["passed_assertions"] = passed
-        result["summary"]["failed_assertions"] = total - passed
-        if total > 0:
-            result["summary"]["coverage_percentage"] = (passed / total) * 100.0
-        
-        return result
-    
-    def _walk_scopes(self, scope, depth=0):
-        """Recursively walk through scope hierarchy."""
-        if scope is None:
+
+    def _write_text(self, data: Dict[str, Any], fp: TextIO):
+        s = data["summary"]
+        fp.write("Assertions: %s\n\n" % data["database"])
+        if not data["assertions"]:
+            fp.write("No cover directives or assertions in this database.\n")
             return
-        
-        yield scope
-        
-        # Recursively process children
-        try:
-            child = scope.getChild()
-            while child:
-                yield from self._walk_scopes(child, depth + 1)
-                child = child.getNextSibling()
-        except:
-            pass
-    
-    def _process_assertion_scope(self, scope):
-        """Process an assertion scope and extract coverage data."""
-        try:
-            name = scope.getScopeName() if hasattr(scope, 'getScopeName') else str(scope)
-            
-            # Try to get assertion coverage data
-            hit = False
-            count = 0
-            
-            # Check if scope has coverage bins
-            try:
-                coveritem = scope.getCoveritem()
-                if coveritem:
-                    # Get first bin to check if assertion passed
-                    bin = coveritem.getBin(0)
-                    if bin:
-                        count = bin.getCount()
-                        hit = count > 0
-            except:
-                pass
-            
-            return {
-                "name": name,
-                "hit": hit,
-                "count": count,
-                "status": "passed" if hit else "failed"
-            }
-        except Exception as e:
-            return None
-    
-    def _format_text(self, data: Dict[str, Any]) -> str:
-        """Format data as human-readable text."""
-        lines = []
-        lines.append("=" * 60)
-        lines.append("ASSERTION COVERAGE REPORT")
-        lines.append("=" * 60)
-        lines.append("")
-        
-        summary = data.get("summary", {})
-        lines.append(f"Total Assertions:  {summary.get('total_assertions', 0)}")
-        lines.append(f"Passed:            {summary.get('passed_assertions', 0)}")
-        lines.append(f"Failed:            {summary.get('failed_assertions', 0)}")
-        lines.append(f"Coverage:          {summary.get('coverage_percentage', 0.0):.2f}%")
-        lines.append("")
-        
-        if "note" in data:
-            lines.append("Note: " + data["note"])
-            lines.append("")
-        
-        assertions = data.get("assertions", [])
-        if assertions:
-            lines.append("Assertions:")
-            lines.append("-" * 60)
-            for assertion in assertions:
-                status = "✓" if assertion.get("hit", False) else "✗"
-                lines.append(f"{status} {assertion.get('name', 'unknown')}")
-                lines.append(f"  Status: {assertion.get('status', 'unknown')}")
-                lines.append(f"  Count:  {assertion.get('count', 0)}")
-                lines.append("")
-        else:
-            lines.append("No assertions found.")
-        
-        return "\n".join(lines)
+        c, a = s["cover"], s["assert"]
+        if c["total"]:
+            fp.write("Cover directives: %.2f%% (%d/%d)\n" % (c["coverage"], c["covered"], c["total"]))
+        if a["total"]:
+            fp.write("Assertions: %d (passed %d, failed %d, not exercised %d)\n" % (
+                a["total"], a["passed"], a["failed"], a["not_exercised"]))
+        fp.write("\n")
+        width = max(len(r["name"]) for r in data["assertions"])
+        for r in data["assertions"]:
+            counts = " ".join("%s=%d" % kv for kv in r["counts"].items())
+            loc = " (%s:%d)" % (r["file"], r["line"]) if "file" in r else ""
+            fp.write("%-*s  %-6s  %-13s  %s%s\n" % (
+                width, r["name"], r["kind"], r["status"], counts, loc))

@@ -13,7 +13,8 @@ class ShowSummary(ShowBase):
     Display overall coverage summary.
     
     Provides:
-    - Overall coverage percentage
+    - Overall coverage percentage: functional coverage when the database
+      has covergroups (``overall_basis: functional``), else code coverage
     - Coverage by type (functional, code, assertion)
     - Test statistics
     - Coverage scope counts
@@ -28,21 +29,30 @@ class ShowSummary(ShowBase):
         """
         from covsight.analysis.coverage_report_builder import CoverageReportBuilder
         
+        from covsight.analysis.code_coverage import CodeCoverage
+
         # Build coverage report
         report = CoverageReportBuilder.build(self.db)
-        
+        code = CodeCoverage(self.db)
+
+        if report.covergroups or not code.items:
+            overall, basis = report.coverage, "functional"
+        else:
+            overall, basis = round(code.overall().coverage_pct, 2), "code"
+
         # Collect overall statistics
         summary = {
             "database": self.args.db,
-            "overall_coverage": report.coverage,
-            "coverage_by_type": self._get_coverage_by_type(report),
+            "overall_coverage": overall,
+            "overall_basis": basis,
+            "coverage_by_type": self._get_coverage_by_type(report, code),
             "statistics": self._get_statistics(report),
             "tests": self._get_test_info(),
         }
         
         return summary
     
-    def _get_coverage_by_type(self, report) -> Dict[str, Any]:
+    def _get_coverage_by_type(self, report, code) -> Dict[str, Any]:
         """Extract coverage percentages by type."""
         coverage_by_type = {}
         
@@ -65,9 +75,18 @@ class ShowSummary(ShowBase):
                 'covergroups': 0
             }
         
-        # Note: Code coverage and assertions would be added when those
-        # data structures are available in the report builder
-        
+        from covsight.analysis.code_coverage import (
+            DIRECTIVE_KINDS, kinds_dict, stats_dict,
+        )
+        kinds = code.kinds_present()
+        if kinds:
+            coverage_by_type['code'] = dict(
+                stats_dict(code.overall(kinds)),
+                by_kind=kinds_dict(code.by_kind(kinds)))
+        directives = code.by_kind(DIRECTIVE_KINDS)
+        if directives['cover'].total:
+            coverage_by_type['cover_directives'] = stats_dict(directives['cover'])
+
         return coverage_by_type
     
     def _get_statistics(self, report) -> Dict[str, Any]:

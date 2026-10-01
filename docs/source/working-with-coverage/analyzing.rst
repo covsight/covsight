@@ -126,5 +126,5 @@ Next Steps
 ==========
 
 * :doc:`comparing` — compare two databases to detect regressions
-* :doc:`../reporting/exporting` — export to LCOV, Cobertura, JaCoCo, or Clover
+* :doc:`../reporting/exporting` — export to Cobertura or LCOV
 * :doc:`../cicd/index` — ready-to-use CI/CD pipeline examples

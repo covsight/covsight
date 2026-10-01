@@ -515,7 +515,9 @@ class CoverageMetrics:
         """
         Per-source-file code-coverage statistics.
 
-        Requires a SQLite backend; returns an empty list for other backends.
+        Other backends are grouped by each item's source location (see
+        ``covsight.analysis.code_coverage``); ``test_filter`` is SQLite-only
+        and yields an empty list elsewhere.
 
         Parameters
         ----------
@@ -527,7 +529,26 @@ class CoverageMetrics:
 
     def _compute_file_coverage(self, test_filter: Optional[str]) -> List[FileCoverageStats]:
         if not hasattr(self._db, 'conn'):
-            return []
+            # API path: group code items by source file.  ``test_filter``
+            # needs per-test contribution data, which only SQLite has.
+            if test_filter:
+                return []
+            from covsight.analysis.code_coverage import CodeCoverage, KINDS
+            attr_of = {'line': 'line', 'branch': 'branch', 'toggle': 'toggle',
+                       'expression': 'expr', 'condition': 'cond',
+                       'fsm_state': 'fsm', 'fsm_transition': 'fsm',
+                       'block': 'block'}
+            result = []
+            files = CodeCoverage(self._db).by_file(KINDS)
+            for fid, (fpath, kinds) in enumerate(files.items()):
+                if not fpath:
+                    continue
+                fcs = FileCoverageStats(file_id=fid, file_path=fpath)
+                for kind, st in kinds.items():
+                    attr = attr_of[kind]
+                    setattr(fcs, attr, getattr(fcs, attr) + st)
+                result.append(fcs)
+            return result
 
         from covsight.core.api import CoverTypeT
         STMT   = int(CoverTypeT.STMTBIN)

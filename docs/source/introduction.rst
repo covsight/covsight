@@ -68,7 +68,7 @@ The ``covsight`` command provides several sub-commands for coverage analysis:
      * - ``show compare``
        - Regression detection against a baseline
      * - ``show code-coverage``
-       - Export to LCOV, Cobertura, JaCoCo, or Clover
+       - Export to Cobertura or LCOV
      * - ``show assertions``
        - SVA/PSL assertion coverage
      * - ``show toggle``

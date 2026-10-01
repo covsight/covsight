@@ -38,8 +38,8 @@ Full Workflow Example
           python3 -c "import sys; sys.exit(0 if float('$COV') >= 80 else 1)" \
             || (echo "Coverage below 80%" && exit 1)
 
-        # Export Cobertura for GitLab coverage widget
-        - covsight show code-coverage merged.ncdb --output-format cobertura > coverage.xml
+        # Export Cobertura for the GitLab coverage visualization
+        - covsight show code-coverage merged.ncdb --output-format cobertura --source-root . -o coverage.xml
 
         # Generate shareable HTML report
         - covsight report merged.ncdb -of html -o coverage_report.html

@@ -71,5 +71,5 @@ Next Steps
 
 * :doc:`../importing/index` — more on importing from different sources
 * :doc:`../working-with-coverage/analyzing` — analyze gaps and hotspots from the CLI
-* :doc:`../reporting/exporting` — export to LCOV, Cobertura, or JaCoCo for CI/CD tools
+* :doc:`../reporting/exporting` — export to Cobertura or LCOV for CI/CD tools
 * :doc:`../cicd/index` — ready-to-use CI/CD pipeline examples

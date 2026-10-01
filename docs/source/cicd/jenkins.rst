@@ -8,8 +8,8 @@ via the Jenkins Cobertura plugin, and generates an HTML report artifact.
 Prerequisites
 =============
 
-Install the `Cobertura Plugin <https://plugins.jenkins.io/cobertura/>`_
-(or `JaCoCo Plugin <https://plugins.jenkins.io/jacoco/>`_) in Jenkins.
+Install the `Cobertura Plugin <https://plugins.jenkins.io/cobertura/>`_ in
+Jenkins.
 
 Full Pipeline Example
 =====================
@@ -41,8 +41,8 @@ Full Pipeline Example
                             || { echo "Coverage below 80%"; exit 1; }
                     '''
 
-                    // Export Cobertura for Jenkins plugin
-                    sh 'covsight show code-coverage merged.ncdb --output-format cobertura > coverage.xml'
+                    // Export Cobertura for the Jenkins plugin
+                    sh 'covsight show code-coverage merged.ncdb --output-format cobertura --source-root . -o coverage.xml'
 
                     // Generate HTML report
                     sh 'covsight report merged.ncdb -of html -o coverage_report.html'
@@ -58,21 +58,6 @@ Full Pipeline Example
                     }
                 }
             }
-        }
-    }
-
-JaCoCo Variant
-==============
-
-Replace the Cobertura steps with:
-
-.. code-block:: groovy
-
-    sh 'covsight show code-coverage merged.ncdb --output-format jacoco > jacoco.xml'
-
-    post {
-        always {
-            jacoco execPattern: 'jacoco.xml'
         }
     }
 

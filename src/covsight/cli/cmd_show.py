@@ -96,7 +96,13 @@ def register(subparsers):
     code_cov = show_sub.add_parser("code-coverage", help="Display code coverage information")
     code_cov.add_argument("--out", "-o", help="Output location")
     code_cov.add_argument("--input-format", "-if", help="Input database format")
-    code_cov.add_argument("--output-format", "-of", default="json", choices=["json", "text", "txt", "lcov", "cobertura", "jacoco", "clover"])
+    code_cov.add_argument("--output-format", "-of", default="json",
+                          choices=["json", "text", "txt", "lcov", "cobertura"],
+                          help="lcov / cobertura write an LCOV tracefile or Cobertura XML "
+                               "(line and branch coverage) for CI tools")
+    code_cov.add_argument("--source-root", "-sr", default=None,
+                          help="Report source files under this directory relative to it "
+                               "(e.g. the repository root)")
     code_cov.add_argument("db", help="Path to the coverage database")
 
     assertions = show_sub.add_parser("assertions", help="Display assertion coverage information")
@@ -109,6 +115,8 @@ def register(subparsers):
     toggle.add_argument("--out", "-o", help="Output location")
     toggle.add_argument("--input-format", "-if", help="Input database format")
     toggle.add_argument("--output-format", "-of", default="json", choices=["json", "text", "txt"])
+    toggle.add_argument("--uncovered", "-u", action="store_true", default=False,
+                        help="Only list signals with an untoggled bit")
     toggle.add_argument("db", help="Path to the coverage database")
 
     parser.set_defaults(func=show)

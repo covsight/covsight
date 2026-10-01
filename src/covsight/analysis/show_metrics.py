@@ -37,9 +37,27 @@ class ShowMetrics(ShowBase):
                 "bin_distribution": self._get_bin_distribution(report),
             }
         }
+        code = self._get_code_metrics()
+        if code:
+            result["metrics"]["code"] = code
         
         return result
     
+    def _get_code_metrics(self) -> Dict[str, Any]:
+        """Code coverage per kind, with hit-count distribution of each."""
+        from covsight.analysis.code_coverage import CodeCoverage, stats_dict
+        cc = CodeCoverage(self.db)
+        ret = {}
+        for kind in cc.kinds_present():
+            counts = sorted(it.count for it in cc.items if it.kind == kind)
+            entry = stats_dict(cc.by_kind((kind,))[kind])
+            entry.update(min_hits=counts[0], max_hits=counts[-1],
+                         median_hits=counts[len(counts) // 2])
+            ret[kind] = entry
+        if ret:
+            ret = dict(overall=stats_dict(cc.overall()), by_kind=ret)
+        return ret
+
     def _get_overall_metrics(self, report) -> Dict[str, Any]:
         """Calculate overall coverage metrics."""
         total_bins = 0

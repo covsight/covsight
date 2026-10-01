@@ -1,0 +1,9 @@
+Coverage Summary:
+  line       : 36.7% (11/30)
+  toggle     : 92.9% (13/14)
+  branch     : 50.0% ( 7/14)
+  expr       : 45.5% ( 5/11)
+  fsm_state  : 100.0% ( 2/ 2)
+  fsm_arc    : 0.0% ( 0/ 0)
+  covergroup : 75.0% ( 3/ 4)
+  user       : 100.0% ( 1/ 1)
