@@ -7,15 +7,34 @@ package:
     - name: covsight-core
       url: https://github.com/covsight/covsight-core.git
       anonymous: true
-    # dv-flow package (covsight.dvflow) and its Verilator end-to-end tests
-    - name: dv-flow-mgr
-      url: https://github.com/dv-flow/dv-flow-mgr.git
-      anonymous: true
-    - name: dv-flow-libhdlsim
-      url: https://github.com/dv-flow/dv-flow-libhdlsim.git
+    - name: pytest
+      src: pypi
+
+  # dv-flow package (covsight.dvflow) end-to-end tests with Verilator:
+  #   ivpm update -a -d dvflow-dev
+  # Kept out of default-dev so the docs/publish jobs do not fetch them.
+  - name: dvflow-dev
+    deps:
+    - name: covsight-core
+      url: https://github.com/covsight/covsight-core.git
+      dep-set: default-dev
       anonymous: true
     - name: pytest
       src: pypi
+    # Their own dep-sets are skipped (doc tooling, other simulators, stale
+    # binary URLs); their runtime requirements are listed here instead.
+    - name: dv-flow-mgr
+      url: https://github.com/dv-flow/dv-flow-mgr.git
+      deps: skip
+      anonymous: true
+    - name: dv-flow-libhdlsim
+      url: https://github.com/dv-flow/dv-flow-libhdlsim.git
+      deps: skip
+      anonymous: true
+    - name: svdep
+      url: https://github.com/fvutils/svdep.git
+      dep-set: default
+      anonymous: true
     - { name: verilator, src: gh-rls, cache: true, url: https://github.com/edapack/verilator-bin }
 
   env:

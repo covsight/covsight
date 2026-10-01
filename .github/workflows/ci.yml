@@ -21,7 +21,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install ivpm and fetch dependencies
-        run: pip install ivpm && ivpm update
+        # -a: clone over HTTPS; ivpm otherwise rewrites github.com URLs to SSH,
+        # which a runner has no key for.
+        run: pip install ivpm && ivpm update -a
 
       - name: Install covsight-core
         run: pip install -e "packages/covsight-core[validate,hjson]"
@@ -31,3 +33,31 @@ jobs:
 
       - name: Test
         run: pytest
+
+  dvflow:
+    name: dv-flow + Verilator tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # The dvflow-dev dep-set adds dv-flow-mgr, dv-flow-libhdlsim and a
+      # Verilator release; ivpm installs them into packages/python.
+      - name: Install ivpm and fetch dependencies
+        run: pip install ivpm uv && ivpm update -a -d dvflow-dev
+
+      # The ivpm venv has no pip.
+      - name: Install covsight
+        run: uv pip install --python packages/python/bin/python -e ".[dev]"
+
+      - name: Test
+        run: |
+          export PATH="$PWD/packages/verilator/bin:$PATH"
+          verilator --version
+          packages/python/bin/python -m pytest tests/dvflow tests/test_code_coverage_views.py

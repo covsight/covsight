@@ -61,7 +61,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install ivpm and fetch dependencies
-        run: pip install ivpm && ivpm update
+        # -a: clone over HTTPS; ivpm otherwise rewrites github.com URLs to SSH,
+        # which a runner has no key for.
+        run: pip install ivpm && ivpm update -a
 
       - name: Install covsight-core
         run: pip install -e "packages/covsight-core[validate,hjson]"
