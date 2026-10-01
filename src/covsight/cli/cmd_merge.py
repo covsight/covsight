@@ -19,10 +19,7 @@ def _default_db_format(registry: FormatRegistry) -> str:
 def merge(args):
     registry = FormatRegistry()
     if args.input_format is None:
-        try:
-            args.input_format = detect_format(args.db[0], registry)
-        except ValueError:
-            args.input_format = _default_db_format(registry)
+        args.input_format = detect_format(args.db[0], registry)
     if args.output_format is None:
         args.output_format = _default_db_format(registry)
 

@@ -8,15 +8,6 @@ from covsight.cli.format_detection import detect_format
 from covsight.core.ext import FormatRegistry
 
 
-def _default_db_format(registry: FormatRegistry) -> str:
-    formats = registry.db_formats()
-    if "ncdb" in formats:
-        return "ncdb"
-    if formats:
-        return next(iter(formats.keys()))
-    raise ValueError("No database formats are installed")
-
-
 class ShowBase(ABC):
     def __init__(self, args):
         self.args = args
@@ -25,10 +16,7 @@ class ShowBase(ABC):
     def execute(self):
         registry = FormatRegistry()
         if self.args.input_format is None:
-            try:
-                self.args.input_format = detect_format(self.args.db, registry)
-            except ValueError:
-                self.args.input_format = _default_db_format(registry)
+            self.args.input_format = detect_format(self.args.db, registry)
 
         input_desc = registry.get_db_format(self.args.input_format)
         self.db = input_desc.fmt_if.read(self.args.db)

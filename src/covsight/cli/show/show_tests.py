@@ -5,6 +5,7 @@ Displays test execution information including status, dates, and results.
 """
 from typing import Any, Dict, List
 from covsight.cli.show_base import ShowBase
+from covsight.core.api import HistoryNodeKind, TestStatusT
 
 
 class ShowTests(ShowBase):
@@ -25,8 +26,6 @@ class ShowTests(ShowBase):
         Returns:
             Dictionary containing test details
         """
-        from covsight.core.api import HistoryNodeKind, TestStatusT
-        
         tests = []
         
         # Get all test history nodes

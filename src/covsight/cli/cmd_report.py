@@ -7,22 +7,10 @@ from covsight.cli.format_detection import detect_format
 from covsight.core.ext import FormatRegistry, FormatRptOutFlags
 
 
-def _default_db_format(registry: FormatRegistry) -> str:
-    formats = registry.db_formats()
-    if "ncdb" in formats:
-        return "ncdb"
-    if formats:
-        return next(iter(formats.keys()))
-    raise ValueError("No database formats are installed")
-
-
 def report(args):
     registry = FormatRegistry()
     if args.input_format is None:
-        try:
-            args.input_format = detect_format(args.db, registry)
-        except ValueError:
-            args.input_format = _default_db_format(registry)
+        args.input_format = detect_format(args.db, registry)
     if args.output_format is None:
         args.output_format = "text"
 

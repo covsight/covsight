@@ -16,10 +16,7 @@ def _default_db_format(registry: FormatRegistry) -> str:
 def convert(args):
     registry = FormatRegistry()
     if args.input_format is None:
-        try:
-            args.input_format = detect_format(args.input, registry)
-        except ValueError:
-            args.input_format = _default_db_format(registry)
+        args.input_format = detect_format(args.input, registry)
     if args.output_format is None:
         args.output_format = _default_db_format(registry)
 
@@ -31,6 +28,7 @@ def convert(args):
     ctx = ConversionContext(strict=getattr(args, "strict", False), listener=ConversionListener())
     in_db = input_if.read(args.input)
     try:
+        _apply_test_info(in_db, args)
         try:
             output_if.write(in_db, args.out, ctx)
         except TypeError:
@@ -43,6 +41,15 @@ def convert(args):
         in_db.close()
 
 
+def _apply_test_info(db, args):
+    info = dict(name=getattr(args, "test_name", None),
+                seed=getattr(args, "seed", None),
+                status=getattr(args, "status", None))
+    if any(v is not None for v in info.values()):
+        from covsight.core.conversion import apply_test_info
+        apply_test_info(db, **info)
+
+
 def register(subparsers):
     parser = subparsers.add_parser("convert", help="Convert coverage data between formats")
     parser.add_argument("--out", "-o", required=True, help="Output database path")
@@ -50,5 +57,8 @@ def register(subparsers):
     parser.add_argument("--output-format", "-of", help="Output database format")
     parser.add_argument("--strict", action="store_true", default=False, help="Treat lossy conversion as an error")
     parser.add_argument("--warn-summary", action="store_true", default=False, help="Print a warning summary at the end")
+    parser.add_argument("--test-name", help="Name of the test that produced the input")
+    parser.add_argument("--seed", help="Seed of the test that produced the input")
+    parser.add_argument("--status", help="Test outcome: pass/ok, fail/error, warning, fatal")
     parser.add_argument("input", help="Source database to convert")
     parser.set_defaults(func=convert)
