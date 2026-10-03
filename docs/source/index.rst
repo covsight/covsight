@@ -18,6 +18,8 @@ files, and provides a command-line interface, HTML reports, and CI/CD format exp
      - I need to import coverage from Verilator, cocotb, or AVL
    * - :doc:`cicd/index`
      - I want to integrate coverage into a CI/CD pipeline
+   * - :doc:`examples/index`
+     - I want to see covsight on real SystemVerilog, run through Verilator
    * - :doc:`reference/index`
      - I'm writing Python code against the covsight API
 
@@ -28,6 +30,13 @@ files, and provides a command-line interface, HTML reports, and CI/CD format exp
 
    introduction
    getting-started/index
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Examples
+
+   examples/index
 
 .. toctree::
    :maxdepth: 2
