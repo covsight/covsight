@@ -9,7 +9,10 @@ its file name, as a user typing the command would see it.  Output goes to
       "status": 0}]
 
 Commands come from the ``commands`` parameter or, when that is empty, from
-the ``transcript`` list in the file named by ``expect``.
+the ``transcript`` list in the file named by ``expect``.  ``{srcdir}`` in a
+command is the flow's source directory; the transcript shows it as ``.``, as
+a user running the command from there would type it
+(``show code-coverage -sr {srcdir}`` reports source files relative to it).
 """
 import asyncio
 import json
@@ -37,10 +40,10 @@ def _slug(cmd: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "-", "-".join(words)).strip("-").lower() or "cmd"
 
 
-def _argv(cmd: str, db_name: str) -> List[str]:
+def _argv(cmd: str, db_name: str, srcdir: str = ".") -> List[str]:
     """Command words with the database put where a user would type it: in
     place of ``{db}``, else after the subcommand words, before any option."""
-    words = shlex.split(cmd)
+    words = [w.replace("{srcdir}", srcdir) for w in shlex.split(cmd)]
     if "{db}" in words:
         return [db_name if w == "{db}" else w for w in words]
     i = next((n for n, w in enumerate(words) if w.startswith("-")), len(words))
@@ -51,9 +54,9 @@ def _display(cmd: str, db_name: str) -> str:
     return "covsight " + " ".join(shlex.quote(w) for w in _argv(cmd, db_name))
 
 
-def _run(cmd: str, db_path: str) -> subprocess.CompletedProcess:
+def _run(cmd: str, db_path: str, srcdir: str) -> subprocess.CompletedProcess:
     db_dir, db_name = os.path.split(db_path)
-    argv = _argv(cmd, db_name)
+    argv = _argv(cmd, db_name, os.path.abspath(srcdir or "."))
     return subprocess.run([sys.executable, "-m", "covsight.cli"] + argv,
                           cwd=db_dir or ".", capture_output=True, text=True)
 
@@ -99,7 +102,7 @@ async def Show(ctxt, input) -> TaskDataResult:
 
     index, files, status = [], [], 0
     for n, cmd in enumerate(cmds, 1):
-        r = await asyncio.to_thread(_run, cmd, db)
+        r = await asyncio.to_thread(_run, cmd, db, input.srcdir)
         fname = "%02d-%s.txt" % (n, _slug(cmd))
         with open(os.path.join(input.rundir, fname), "w") as f:
             f.write(r.stdout)

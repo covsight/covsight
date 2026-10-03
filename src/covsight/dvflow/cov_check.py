@@ -119,8 +119,12 @@ async def Check(ctxt, input) -> TaskDataResult:
         except Exception as e:
             errors.append("parity: %s" % e)
             res = []
-        result["parity"] = [dict(kind=r.kind, state=r.state, text=r.describe())
-                            for r in res]
+        result["parity"] = [dict(
+            kind=r.kind, state=r.state, text=r.describe(),
+            covsight="%d/%d" % tuple(r.covsight),
+            verilator="%d/%d" % tuple(r.verilator),
+            verilator_without_std="%d/%d" % tuple(r.expected),
+            explanation=r.explanation or "") for r in res]
         for r in res:
             if r.state in ("mismatch", "stale"):
                 errors.append("parity: " + r.describe())

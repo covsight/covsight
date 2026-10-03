@@ -25,6 +25,10 @@ def test_argv_and_slug():
     assert _argv("show bins {db} --covergroup cg", "m.cdb") == [
         "show", "bins", "m.cdb", "--covergroup", "cg"]
     assert _display("show hierarchy", "m.cdb") == "covsight show hierarchy m.cdb"
+    assert _argv("show code-coverage -sr {srcdir}", "m.cdb", "/ex") == [
+        "show", "code-coverage", "m.cdb", "-sr", "/ex"]
+    assert _display("show code-coverage -sr {srcdir}", "m.cdb") == \
+        "covsight show code-coverage m.cdb -sr ."
     assert _slug("show code-coverage -of text") == "show-code-coverage"
     assert _slug("report {db} -of json") == "report"
 
