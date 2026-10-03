@@ -31,3 +31,20 @@ def test_coverage_report_builder_smoke():
     assert report.covergroups[0].name == "cg"
     assert len(report.covergroups[0].coverpoints) == 1
     assert report.covergroups[0].coverpoints[0].coverage == 100
+
+
+def test_cross_bins_use_at_least():
+    """A cross bin is hit when its count reaches at_least, as a coverpoint
+    bin is; its goal (often 0) is not the threshold."""
+    from covsight.core.api import CoverTypeT
+    db = _build_db()
+    (inst,) = db.scopes(ScopeTypeT.INSTANCE)
+    (cg,) = inst.scopes(ScopeTypeT.COVERGROUP)
+    (cp,) = cg.scopes(ScopeTypeT.COVERPOINT)
+    cr = cg.createCross("t_x_t", None, 1, SourceT.SV, [cp, cp])
+    cr.createBin("<a,a>", None, 1, 3, "a,a", CoverTypeT.CVGBIN)
+    cr.createBin("<b,b>", None, 1, 0, "b,b", CoverTypeT.CVGBIN)
+    for ci in cr.coverItems(CoverTypeT.CVGBIN):
+        ci.getCoverData().goal = 0
+    (cr_r,) = CoverageReportBuilder.build(db).covergroups[0].crosses
+    assert [b.hit for b in cr_r.bins] == [True, False]

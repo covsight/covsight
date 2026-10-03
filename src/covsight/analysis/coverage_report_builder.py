@@ -170,7 +170,7 @@ class CoverageReportBuilder(object):
                 
             cr_r.bins.append(CoverageReport.CoverBin(
                     ci_n.getName(),
-                    cvg_data.goal,
+                    cvg_data.at_least,
                     cvg_data.data))
 
             total += 1
