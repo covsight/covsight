@@ -1,0 +1,5 @@
+# What covsight.Check holds the merged database (both tests) to.
+totals:
+  line: 9/9
+  branch: 2/2
+  expression: 7/7

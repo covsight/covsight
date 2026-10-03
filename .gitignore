@@ -9,3 +9,6 @@ build/
 packages/
 _build/
 
+# Example suite: dv-flow run directories and the docs data built from them
+examples/**/rundir/
+docs/source/examples/_gen/

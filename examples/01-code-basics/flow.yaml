@@ -1,0 +1,81 @@
+# 01-code-basics: line, branch and expression coverage of a small design.
+#
+#   dfm run all       # build, run both tests, import, merge, show, check
+#
+# t_basic leaves a hole (no add overflows, no subtract goes below zero);
+# t_full closes it. show_basic and show_merged keep the CLI output for
+# t_basic alone and for both tests merged; check holds the merged numbers
+# to expect.yaml and to verilator_coverage.
+package:
+  name: ex01
+  imports:
+  - name: hdlsim
+  - name: covsight
+
+  tasks:
+  - name: rtl
+    uses: std.FileSet
+    with:
+      type: systemVerilogSource
+      include: [design.sv, tb.sv]
+
+  - name: img
+    uses: hdlsim.vlt.SimImage
+    needs: [rtl]
+    with:
+      top: [tb]
+      cov: code            # --coverage-line --coverage-expr (branches come with lines)
+
+  - name: t_basic
+    uses: hdlsim.vlt.SimRun
+    needs: [img]
+    with: {plusargs: ["TEST=basic"]}
+  - name: check_basic
+    uses: hdlsim.SimCheck
+    needs: [t_basic]
+
+  - name: t_full
+    uses: hdlsim.vlt.SimRun
+    needs: [img]
+    with: {plusargs: ["TEST=full"]}
+  - name: check_full
+    uses: hdlsim.SimCheck
+    needs: [t_full]
+
+  # One NCDB per test; 'basic' is t_basic alone, 'merged' both tests.
+  - name: cov_basic
+    uses: covsight.Import
+    needs: [check_basic]
+  - name: cov_full
+    uses: covsight.Import
+    needs: [check_full]
+  - name: basic
+    uses: covsight.Merge
+    needs: [cov_basic]
+    with: {output: basic.cdb}
+  - name: merged
+    uses: covsight.Merge
+    needs: [cov_basic, cov_full]
+
+  - export: show_basic
+    uses: covsight.Show
+    needs: [basic]
+    with:
+      commands:
+      - show code-coverage -of text -sr {srcdir}
+      - show hierarchy -of text
+  - export: show_merged
+    uses: covsight.Show
+    needs: [merged]
+    with:
+      commands:
+      - show code-coverage -of text -sr {srcdir}
+      - show hierarchy -of text
+  - export: check
+    uses: covsight.Check
+    needs: [merged, t_basic, t_full, img]
+
+  - root: all
+    uses: std.Message
+    needs: [show_basic, show_merged, check]
+    with: {msg: "ex01: done"}

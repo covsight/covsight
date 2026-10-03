@@ -1,0 +1,25 @@
+# The SystemVerilog example suite.
+#
+#   dfm run all       # run every example; each one's check must pass
+#   dfm run docs      # run them and copy their output into the docs
+#                     # (docs/source/examples/_gen/<example>/)
+#
+# Each example is its own package in its own directory and can also be run
+# from there. Add a new one to `imports` and to the `needs` of both tasks.
+package:
+  name: examples
+  imports:
+  - from: 01-code-basics/flow.yaml
+
+  tasks:
+  - root: all
+    uses: std.Message
+    needs: [ex01.all]
+    with: {msg: "examples: all done"}
+
+  - root: docs
+    needs: [ex01.all]
+    shell: bash
+    run: |
+      python3 "$TASK_SRCDIR/collect_docs.py" "$(dirname "$TASK_RUNDIR")" \
+        "$TASK_SRCDIR/../docs/source/examples/_gen" "$TASK_SRCDIR"
