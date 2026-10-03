@@ -26,6 +26,7 @@ files, and provides a command-line interface, HTML reports, and CI/CD format exp
    :hidden:
    :caption: Getting Started
 
+   introduction
    getting-started/index
 
 .. toctree::

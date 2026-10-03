@@ -3,7 +3,7 @@ Quickstart
 ##########
 
 This page walks through the most common workflow: import a coverage file from your
-simulator, inspect it, and generate a shareable HTML report.
+simulator, inspect it, and look at code coverage per instance and per file.
 
 Step 1 — Import
 ===============
@@ -46,25 +46,27 @@ Get an instant overview without generating a report file:
 This prints the overall coverage percentage and a breakdown by type (functional,
 code, assertion, toggle).
 
-Step 3 — Generate a Shareable Report
-=====================================
+Step 3 — Look at Code Coverage
+===============================
 
 .. code-block:: bash
 
-    covsight report coverage.ncdb -of html -o report.html
+    covsight show code-coverage coverage.ncdb -of text
 
-Open ``report.html`` in any browser — it is a single self-contained file that can
-be emailed, archived, or hosted on a web server without any extra dependencies.
+This prints tables of line, branch, expression and toggle coverage: totals,
+then per instance, then per file. A single-file HTML report
+(``covsight report -of html``) is planned; see :doc:`../reporting/html-report`.
 
 Step 4 — Merge Multiple Runs (optional)
 ========================================
 
-If you have coverage from several test runs, merge them before reporting:
+If you have coverage from several test runs, merge them, then inspect the
+merged database the same way:
 
 .. code-block:: bash
 
     covsight merge -o merged.ncdb test1.ncdb test2.ncdb test3.ncdb
-    covsight report merged.ncdb -of html -o merged_report.html
+    covsight show code-coverage merged.ncdb -of text
 
 Next Steps
 ==========

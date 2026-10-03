@@ -75,9 +75,10 @@ The ``covsight`` command provides several sub-commands for coverage analysis:
        - Signal toggle coverage
 
 **Report**
-  Generate a coverage report in HTML, JSON, or text format::
+  Generate a coverage report in JSON or text format (an HTML report is
+  planned)::
 
-      covsight report coverage.ncdb -of html -o report.html
+      covsight report coverage.ncdb -of json -o report.json
 
 **History**
   Query per-test run history stored in NCDB databases.
@@ -99,8 +100,8 @@ Quick Example
     # Check overall coverage
     covsight show summary regression.ncdb
 
-    # Generate an HTML report
-    covsight report regression.ncdb -of html -o report.html
+    # Code coverage per instance and per file
+    covsight show code-coverage regression.ncdb -of text
 
 Architecture
 ============

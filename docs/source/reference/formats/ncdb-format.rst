@@ -44,4 +44,4 @@ fast same-schema merges without parsing the scope tree.
 
    * :doc:`xml-interchange` — XML interchange format (import/export)
    * :doc:`yaml-format` — YAML human-readable format (import)
-   * :ref:`working-with-coverage-merging` — How to merge databases using the CLI
+   * :doc:`../../working-with-coverage/merging` — How to merge databases using the CLI

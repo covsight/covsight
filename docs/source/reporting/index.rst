@@ -4,7 +4,7 @@ Reporting
 
 covsight can produce coverage output in several forms:
 
-* :doc:`html-report` — an interactive single-file HTML report for sharing with a team
+* :doc:`html-report` — a single-file HTML report for sharing with a team (planned)
 * :doc:`exporting` — industry-standard formats (LCOV, Cobertura, JaCoCo, Clover)
   for CI/CD and code-quality tools
 

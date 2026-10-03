@@ -15,9 +15,9 @@ method; companion ``format_*()`` functions render the dataclass to human-readabl
 
 -----------
 
-**********************
+************************
 Closure and gate reports
-**********************
+************************
 
 .. code-block:: python
 

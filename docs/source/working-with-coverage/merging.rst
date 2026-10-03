@@ -1,6 +1,6 @@
-###############
+################
 Merging Coverage
-###############
+################
 
 Coverage from multiple test runs must be merged into a single database before
 you can report on the full regression. Use ``covsight merge``:
@@ -53,6 +53,12 @@ See :doc:`../reference/formats/ncdb-format` for technical details.
 
 Typical Regression Workflow
 ============================
+
+.. note::
+
+   The HTML report (``-of html``) is planned and not available yet; see
+   :doc:`../reporting/html-report`. Until then, publish the LCOV or Cobertura
+   export, or the output of ``covsight show code-coverage -of text``.
 
 .. code-block:: bash
 

@@ -1,6 +1,14 @@
-#####################
+#######################
 Interactive HTML Report
-#####################
+#######################
+
+.. warning::
+
+   **Planned, not yet available.** ``covsight report`` does not have an
+   ``html`` output format yet; this page describes the intended report. It is
+   being built as a JavaScript-free single file (and a multi-page variant)
+   rather than the JavaScript-based design below; this page will be
+   rewritten when it ships.
 
 ``covsight report -of html`` generates a **single self-contained HTML file** with
 interactive charts, expandable hierarchy, and bin-level details. It can be

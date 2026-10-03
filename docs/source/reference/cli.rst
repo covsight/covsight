@@ -1,6 +1,6 @@
-####################
+#####################
 CLI Command Reference
-####################
+#####################
 
 Complete reference for all ``covsight`` sub-commands and options.
 

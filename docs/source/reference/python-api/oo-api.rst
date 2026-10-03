@@ -1,6 +1,6 @@
-################################
+#################################
 covsight.core Object-Oriented API
-################################
+#################################
 
 The ``covsight.core`` package provides an object-oriented API for
 accessing coverage databases. This page documents every class in the

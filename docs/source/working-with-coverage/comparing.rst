@@ -1,6 +1,6 @@
-##########################
+############################
 Comparing Coverage Databases
-##########################
+############################
 
 ``covsight show compare`` compares two coverage databases and reports what changed.
 Use it in nightly regressions to detect coverage regressions before they accumulate.

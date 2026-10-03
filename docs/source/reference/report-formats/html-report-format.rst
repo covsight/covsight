@@ -2,6 +2,14 @@
 HTML Coverage Report Format
 ###########################
 
+.. warning::
+
+   **Planned, not yet available.** ``covsight report`` does not have an
+   ``html`` output format yet; this page describes the intended report. It is
+   being built as a JavaScript-free single file (and a multi-page variant)
+   rather than the JavaScript-based design below; this page will be
+   rewritten when it ships.
+
 The HTML coverage report format generates a single-file, interactive HTML
 report for visualization and analysis of coverage data. The report can be
 opened directly in any modern web browser without a web server or external

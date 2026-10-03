@@ -14,6 +14,12 @@ Jenkins.
 Full Pipeline Example
 =====================
 
+.. note::
+
+   The HTML report (``-of html``) is planned and not available yet; see
+   :doc:`../reporting/html-report`. Until then, publish the LCOV or Cobertura
+   export, or the output of ``covsight show code-coverage -of text``.
+
 .. code-block:: groovy
 
     pipeline {

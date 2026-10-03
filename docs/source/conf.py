@@ -25,6 +25,12 @@ extensions = [
     "sphinxarg.ext",
 ]
 
+# Section labels are "<doc path>:<title>", so the same heading in two pages
+# (e.g. "Verilator Projects") does not collide.
+autosectionlabel_prefix_document = True
+# sphinx-argparse repeats "Positional Arguments" etc. once per subcommand.
+suppress_warnings = ["autosectionlabel.reference/cli"]
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
@@ -45,6 +51,12 @@ release = "0.1.0"
 version = "0.1"
 
 autoclass_content = "both"
+
+# covsight-core annotates "-> 'Covergroup'"; without this it is ambiguous with
+# covsight.analysis.coverage_report.CoverageReport.Covergroup.
+autodoc_type_aliases = {
+    "Covergroup": "covsight.core.api.covergroup.Covergroup",
+}
 
 exclude_patterns = []
 

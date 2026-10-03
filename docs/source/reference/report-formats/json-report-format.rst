@@ -17,9 +17,9 @@ Python API
 ==========
 
 You can build a coverage report object programmatically using the
-``CoverageReportBuilder`` class from ``covsight.core``:
+``CoverageReportBuilder`` class from ``covsight.analysis``:
 
-.. autoclass:: covsight.core.report.CoverageReportBuilder
+.. autoclass:: covsight.analysis.coverage_report_builder.CoverageReportBuilder
    :members: build
 
 CoverageReport Object
@@ -27,21 +27,21 @@ CoverageReport Object
 
 The ``CoverageReport`` object is a tree of covergroups and coverpoints.
 
-.. autoclass:: covsight.core.report.CoverageReport
+.. autoclass:: covsight.analysis.coverage_report.CoverageReport
    :members: covergroups, coverage
 
-.. autoclass:: covsight.core.report.CoverageReport.Covergroup
+.. autoclass:: covsight.analysis.coverage_report.CoverageReport.Covergroup
    :members:
 
-.. autoclass:: covsight.core.report.CoverageReport.CoverItem
+.. autoclass:: covsight.analysis.coverage_report.CoverageReport.CoverItem
    :members:
 
-.. autoclass:: covsight.core.report.CoverageReport.Coverpoint
+.. autoclass:: covsight.analysis.coverage_report.CoverageReport.Coverpoint
    :show-inheritance:
    :inherited-members:
    :members:
 
-.. autoclass:: covsight.core.report.CoverageReport.Cross
+.. autoclass:: covsight.analysis.coverage_report.CoverageReport.Cross
    :show-inheritance:
    :inherited-members:
    :members:

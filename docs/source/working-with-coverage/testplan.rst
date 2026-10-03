@@ -91,9 +91,9 @@ accepted and sort after V3 in gate evaluation.
 
 -----------
 
-**************************
+***************************
 Authoring and substitutions
-**************************
+***************************
 
 Testplans support ``{key}`` substitution in test name templates.
 A list value generates the cartesian product of all combinations::
@@ -252,9 +252,9 @@ below it** (V1 < V2 < V2S < V3) are CLOSED or N/A.
 
 -----------
 
-**********************
+************************
 Embedding and extracting
-**********************
+************************
 
 Embed a testplan in a ``.cdb`` (accepts YAML, JSON, or Hjson)::
 
