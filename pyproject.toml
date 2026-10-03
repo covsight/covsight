@@ -10,6 +10,7 @@ description = "Coverage analysis CLI and tooling built on covsight-core"
 license = "Apache-2.0"
 dependencies = [
     "covsight-core",
+    "pyyaml>=5.1",
     "rich>=13.0",
 ]
 
@@ -30,7 +31,7 @@ covsight = "covsight.dvflow.__ext__"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"covsight.dvflow" = ["*.yaml"]
+"covsight.dvflow" = ["*.yaml", "*.json"]
 
 [tool.setuptools_scm]
 root = "."

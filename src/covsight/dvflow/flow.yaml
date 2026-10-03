@@ -60,3 +60,55 @@ package:
         doc: Output file name, relative to the task's run directory
         type: str
         value: "merged.cdb"
+
+  - export: Show
+    doc: |
+      Run covsight commands on a database and keep their output (one .txt per
+      command, plus transcript.json listing them), e.g. for the docs.
+    pytask: covsight.dvflow.cov_show.Show
+    consumes:
+    - filetype: covsightNCDB
+    produces:
+    - type: std.FileSet
+      filetype: covsightTranscript
+    with:
+      commands:
+        doc: |
+          covsight commands without the database, e.g. "show code-coverage
+          -of text". The database goes after the subcommand words, or in
+          place of "{db}".
+        type: list
+        value: []
+      expect:
+        doc: |
+          expect.yaml whose `transcript` list is used when `commands` is
+          empty (relative to the flow's directory)
+        type: str
+        value: ""
+
+  - export: Check
+    doc: |
+      Check a coverage run against expect.yaml: per-kind totals, parity with
+      verilator_coverage, and the expected Verilator build warnings.
+      Fails with one marker per difference; writes check.json.
+    pytask: covsight.dvflow.cov_check.Check
+    consumes:
+    - filetype: covsightNCDB
+    - filetype: simCovDb
+    - filetype: simDir
+    - type: hdlsim.TestResult
+    - type: hdlsim.SimRunResult
+    - type: hdlsim.SuiteResult
+    with:
+      expect:
+        doc: Path to expect.yaml, relative to the flow's directory
+        type: str
+        value: "expect.yaml"
+      parity:
+        doc: Compare with verilator_coverage --report summary (needs coverage.dat inputs)
+        type: bool
+        value: true
+      include_std:
+        doc: Set when covsight.Import kept Verilator's std package (include_std)
+        type: bool
+        value: false

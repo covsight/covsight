@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dvkit.org/covsight/schema/expect.schema.json",
+  "title": "covsight example expectations (expect.yaml)",
+  "description": "What an example's coverage run should produce. Read by the covsight.Check and covsight.Show dv-flow tasks. covsight.dvflow.expect validates the same rules and reports file:line errors.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "kind": {
+      "enum": ["line", "branch", "expression", "condition", "toggle",
+               "fsm_state", "fsm_transition", "block",
+               "covergroup", "cover", "assertion"]
+    }
+  },
+  "properties": {
+    "totals": {
+      "description": "covered/total per coverage kind; kinds left out are not checked.",
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/kind"},
+      "additionalProperties": {"type": "string", "pattern": "^\\s*\\d+\\s*/\\s*\\d+\\s*$"}
+    },
+    "transcript": {
+      "description": "covsight commands (without the database argument) whose output goes in the docs, in order.",
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "parity": {
+      "description": "Known differences from verilator_coverage --report summary, per kind, each with its reason.",
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/kind"},
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "warnings": {
+      "description": "Regular expressions for the Verilator build warnings this example expects. Any other warning fails the check.",
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

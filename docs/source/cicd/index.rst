@@ -1,6 +1,6 @@
-################
+#################
 CI/CD Integration
-################
+#################
 
 covsight integrates cleanly into continuous integration pipelines. The typical
 pattern is:
@@ -13,6 +13,7 @@ pattern is:
 .. toctree::
    :maxdepth: 1
 
+   dv-flow
    github-actions
    gitlab-ci
    jenkins
