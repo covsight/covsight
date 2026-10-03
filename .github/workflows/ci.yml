@@ -47,8 +47,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      # The dvflow-dev dep-set adds dv-flow-mgr, dv-flow-libhdlsim and a
-      # Verilator release; ivpm installs them into packages/python.
+      # The dvflow-dev dep-set adds dv-flow-mgr, dv-flow-libhdlsim and
+      # Verilator 5.052; ivpm installs the Python packages into packages/python.
       - name: Install ivpm and fetch dependencies
         run: pip install ivpm uv && ivpm update -a -d dvflow-dev
 

@@ -28,17 +28,28 @@
 #  2. `pip` in that image is 22.0.2 and predates PEP 660, so `pip install -e .`
 #     fails outright ("build backend is missing the build_editable hook").
 #     Hence the pip upgrade, and a plain non-editable install.
-#  3. NO ivpm, and NO GitHub. The GitHub workflow runs `ivpm update` to fetch
-#     covsight-core from github.com and installs it from the source checkout.
-#     Doing that here would put GitHub on the critical path of a Forgejo build
-#     -- the coupling this whole migration exists to remove (docs-publishing
-#     design F5, which bitsbytesgates still has). covsight-core has been
-#     published to PyPI since 2026-08-23, so this installs it from there
-#     instead: no ivpm, no credential, no GitHub.
+#  3. NO ivpm, and NO GitHub -- the general rule, from which THIS REPO IS AN
+#     EXCEPTION (decided 2026-10-03, examples-suite-design.md D8).
 #
-#     Consequence, and it is the right trade for docs: this builds against the
-#     RELEASED covsight-core, not the working tree. If a doc page depends on
-#     unreleased covsight-core behaviour, release covsight-core first.
+#     The rule: the GitHub workflow runs `ivpm update` to fetch covsight-core
+#     from github.com. Doing that here would put GitHub on the critical path
+#     of a Forgejo build -- the coupling this whole migration exists to remove
+#     (docs-publishing design F5, which bitsbytesgates still has).
+#
+#     Why covsight is different: its docs embed the output of the SystemVerilog
+#     examples (examples/), which only exists after Verilator, dv-flow and
+#     covsight have run. Those tools come from ivpm, so this job will run
+#     `ivpm update -a -d docs` and may fetch from GitHub. The `docs` dep-set in
+#     ivpm.yaml pins every dependency (tag or commit) so a rebuild is
+#     repeatable; a GitHub outage blocks a docs publish, which is accepted.
+#     Spike, 2026-10-03, in catthehacker/ubuntu:act-22.04: g++ 11.4, make 4.3
+#     and Python 3.10.12 are present; `ivpm update -a -d docs` takes ~75 s and
+#     Verilator 5.052 runs.
+#
+#     Until the examples land (examples-suite-impl-plan.md T2.6) the steps
+#     below still install the RELEASED covsight-core from PyPI, with no ivpm.
+#     If a doc page depends on unreleased covsight-core behaviour, release
+#     covsight-core first.
 #  4. NO release-authority gate. That switch decides who publishes PACKAGES to
 #     PyPI/npm/Marketplace. Docs are not a release: they publish from Forgejo to
 #     dvkit.org unconditionally, whichever side holds release authority. Adding

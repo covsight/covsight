@@ -1,12 +1,24 @@
 package:
   name: covsight
+  default-dep-set: dev
 
   dep-sets:
+  - name: use
+    deps: []
+  - name: dev
+    uses: default-dev
+
   - name: default-dev
     deps: 
     - name: covsight-core
       url: https://github.com/covsight/covsight-core.git
       anonymous: true
+    - name: sphinx-systemverilog
+      url: https://github.com/fvutils/sphinx-systemverilog.git
+    - name: tools
+      src: ivpm.yaml
+      url: https://edapack.github.io/ivpm.yaml
+      dep-set: sim.rtl
     - name: pytest
       src: pypi
 
@@ -21,6 +33,10 @@ package:
       anonymous: true
     - name: pytest
       src: pypi
+    # covsight-core[validate,hjson], as the GitHub 'python' job installs it.
+    # Without jsonschema, testplan validation and expect.yaml checks degrade.
+    - { name: jsonschema, src: pypi }
+    - { name: hjson, src: pypi }
     # Their own dep-sets are skipped (doc tooling, other simulators, stale
     # binary URLs); their runtime requirements are listed here instead.
     - name: dv-flow-mgr
@@ -35,7 +51,49 @@ package:
       url: https://github.com/fvutils/svdep.git
       dep-set: default
       anonymous: true
-    - { name: verilator, src: gh-rls, cache: true, url: https://github.com/edapack/verilator-bin }
+    # Pinned: example totals (examples/*/expect.yaml) and the probe findings
+    # (tests/vltprobe) depend on the Verilator version. Bump in its own PR.
+    - { name: verilator, src: gh-rls, cache: true, url: https://github.com/edapack/verilator-bin, version: "5.052" }
+
+  # SystemVerilog examples (examples/, see examples-suite-design.md):
+  #   ivpm update -a -d examples
+  - name: examples
+    description: dv-flow, Verilator and covsight-core for running the examples.
+    uses: dvflow-dev
+
+  # Forgejo docs job: runs the examples, then builds the docs from their output.
+  # This repo's docs depend on data only the tools can produce, so the docs job
+  # runs ivpm and fetches from GitHub (design doc D8). Everything is pinned so a
+  # rebuild is repeatable; bump the pins deliberately.
+  - name: docs
+    description: The examples dep-set, pinned, plus the Sphinx toolchain.
+    uses: examples
+    deps:
+    - name: covsight-core
+      url: https://github.com/covsight/covsight-core.git
+      commit: 3828bdd0989a
+      dep-set: default-dev
+      anonymous: true
+    - name: dv-flow-mgr
+      url: https://github.com/dv-flow/dv-flow-mgr.git
+      tag: v1.19.0
+      deps: skip
+      anonymous: true
+    - name: dv-flow-libhdlsim
+      url: https://github.com/dv-flow/dv-flow-libhdlsim.git
+      commit: d651ae274c32
+      deps: skip
+      anonymous: true
+    - name: svdep
+      url: https://github.com/fvutils/svdep.git
+      commit: 3289f20f2fe6
+      dep-set: default
+      anonymous: true
+    - { name: sphinx, src: pypi, version: ">=7.0" }
+    - { name: sphinx-rtd-theme, src: pypi }
+    - { name: sphinx-argparse, src: pypi }
+    - { name: sphinx-design, src: pypi }
+    - { name: sphinx-issues, src: pypi }
 
   env:
   - name: PATH
