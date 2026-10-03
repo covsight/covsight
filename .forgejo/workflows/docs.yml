@@ -38,18 +38,13 @@
 #
 #     Why covsight is different: its docs embed the output of the SystemVerilog
 #     examples (examples/), which only exists after Verilator, dv-flow and
-#     covsight have run. Those tools come from ivpm, so this job will run
-#     `ivpm update -a -d docs` and may fetch from GitHub. The `docs` dep-set in
+#     covsight have run. Those tools come from ivpm, so this job runs
+#     `ivpm update -a -d docs` and fetches from GitHub. The `docs` dep-set in
 #     ivpm.yaml pins every dependency (tag or commit) so a rebuild is
-#     repeatable; a GitHub outage blocks a docs publish, which is accepted.
-#     Spike, 2026-10-03, in catthehacker/ubuntu:act-22.04: g++ 11.4, make 4.3
-#     and Python 3.10.12 are present; `ivpm update -a -d docs` takes ~75 s and
-#     Verilator 5.052 runs.
-#
-#     Until the examples land (examples-suite-impl-plan.md T2.6) the steps
-#     below still install the RELEASED covsight-core from PyPI, with no ivpm.
-#     If a doc page depends on unreleased covsight-core behaviour, release
-#     covsight-core first.
+#     repeatable -- covsight-core included, so the docs build against a known
+#     commit rather than the latest release. A GitHub outage blocks a docs
+#     publish, which is accepted. catthehacker/ubuntu:act-22.04 has the g++
+#     11.4, make 4.3 and Python 3.10 that Verilator and ivpm need.
 #  4. NO release-authority gate. That switch decides who publishes PACKAGES to
 #     PyPI/npm/Marketplace. Docs are not a release: they publish from Forgejo to
 #     dvkit.org unconditionally, whichever side holds release authority. Adding
@@ -97,20 +92,36 @@ jobs:
           echo "OK: no internal identifiers in tracked files"
 
       - name: Install dependencies
-        # covsight-core from PyPI, not from an ivpm checkout -- see note 3.
+        # ivpm fetches the pinned `docs` dep-set (covsight-core, dv-flow,
+        # Verilator, Sphinx) into packages/, with a venv in packages/python --
+        # see note 3. That venv has no pip, so covsight itself goes in with uv.
         run: |
           python3 -m pip install -q --upgrade pip setuptools wheel
-          python3 -m pip install -q "covsight-core[validate,hjson]"
-          python3 -m pip install -q .
-          python3 -m pip install -q -r docs/requirements.txt
+          python3 -m pip install -q ivpm uv
+          ivpm update -a -d docs
+          uv pip install --python packages/python/bin/python .
+          echo "$PWD/packages/python/bin" >> "$GITHUB_PATH"
+          echo "$PWD/packages/verilator/bin" >> "$GITHUB_PATH"
 
       - name: Both halves of the covsight namespace import
         # autodoc reports a failed import as a warning and carries on, so a
         # broken install shows up as a doc set that is quietly missing its API
         # reference rather than as a failed build. Fail here instead.
-        run: python3 -c "import covsight.cli, covsight.core; print('covsight.cli and covsight.core both import')"
+        run: python -c "import covsight.cli, covsight.core; print('covsight.cli and covsight.core both import')"
+
+      - name: Run the examples
+        # Builds and runs every example, checks each against its expect.yaml
+        # and verilator_coverage, and copies the output the docs embed to
+        # docs/source/examples/_gen/. A failed check fails the docs build.
+        run: |
+          verilator --version
+          cd examples && dfm run docs
 
       - name: Build HTML docs
+        # COVSIGHT_EXAMPLES_REQUIRED: an example page whose generated output
+        # is missing is an error here (locally it is a note on the page).
+        env:
+          COVSIGHT_EXAMPLES_REQUIRED: "1"
         run: sphinx-build -b html docs/source docs/_build/html
 
       - name: Sanity-check the build
@@ -121,7 +132,13 @@ jobs:
             || { echo "::error::no index.html in the build output"; exit 1; }
           n=$(find docs/_build/html -name '*.html' | wc -l)
           echo "generated pages: $n"
-          [ "$n" -ge 30 ] || { echo "::error::only $n pages built; expected ~38. Refusing to call this a doc set."; exit 1; }
+          [ "$n" -ge 30 ] || { echo "::error::only $n pages built; expected ~40. Refusing to call this a doc set."; exit 1; }
+          # Every example page carries its generated transcripts.
+          for page in docs/_build/html/examples/[0-9]*.html; do
+            grep -q '\$ covsight show' "$page" \
+              || { echo "::error::$page has no generated transcripts"; exit 1; }
+          done
+          echo "example pages: $(ls docs/_build/html/examples/[0-9]*.html | wc -l)"
 
       - name: Upload docs
         # Consumed by the host-side poller: `docs-fetch covsight/covsight main`.
