@@ -15,6 +15,7 @@ _SHOW_IMPLS = {
     "code-coverage": ("covsight.cli.show.show_code_coverage", "ShowCodeCoverage"),
     "assertions": ("covsight.cli.show.show_assertions", "ShowAssertions"),
     "toggle": ("covsight.cli.show.show_toggle", "ShowToggle"),
+    "source": ("covsight.cli.show.show_source", "ShowSource"),
 }
 
 
@@ -118,5 +119,21 @@ def register(subparsers):
     toggle.add_argument("--uncovered", "-u", action="store_true", default=False,
                         help="Only list signals with an untoggled bit")
     toggle.add_argument("db", help="Path to the coverage database")
+
+    source = show_sub.add_parser(
+        "source", help="Display source files annotated with code coverage")
+    source.add_argument("--out", "-o", help="Output location")
+    source.add_argument("--input-format", "-if", help="Input database format")
+    source.add_argument("--output-format", "-of", default="text",
+                        choices=["json", "text", "txt"])
+    source.add_argument("--source-root", "-sr", default=None,
+                        help="Directory the recorded source paths are read from "
+                             "(and reported relative to)")
+    source.add_argument("--file", "-f", action="append", default=None,
+                        help="Only this file (matched against the end of the "
+                             "recorded path); may be repeated")
+    source.add_argument("--uncovered", "-u", action="store_true", default=False,
+                        help="Only lines that were missed or partly hit")
+    source.add_argument("db", help="Path to the coverage database")
 
     parser.set_defaults(func=show)

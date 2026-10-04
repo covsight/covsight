@@ -89,6 +89,21 @@ Shows per-test pass/fail status and test-specific coverage contribution.
 
     covsight show hierarchy coverage.ncdb --depth 3
 
+.. rubric:: Code coverage on the source
+
+.. code-block:: bash
+
+    covsight show code-coverage coverage.ncdb -of text   # totals per kind, instance, file
+    covsight show source coverage.ncdb -sr .             # each line with its hit count
+    covsight show source coverage.ncdb -sr . -u          # only lines with something missed
+
+``show source`` prints each source line with its hit count, and under the
+line the branch arms and expression rows that start on it. ``#`` marks a
+line, arm or row never hit; ``~`` a line that ran but has an arm or row
+under it that did not. ``--source-root`` / ``-sr`` is the directory the
+recorded source paths are read from; ``--file`` / ``-f`` picks files.
+:doc:`../examples/01-code-basics` walks through reading it.
+
 .. rubric:: Assertions and Toggle
 
 .. code-block:: bash
