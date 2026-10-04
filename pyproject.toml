@@ -9,7 +9,7 @@ requires-python = ">=3.10"
 description = "Coverage analysis CLI and tooling built on covsight-core"
 license = "Apache-2.0"
 dependencies = [
-    "covsight-core",
+    "covsight-core>=0.2.0",
     "pyyaml>=5.1",
     "rich>=13.0",
 ]
