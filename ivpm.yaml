@@ -51,11 +51,11 @@ package:
       url: https://github.com/fvutils/svdep.git
       dep-set: default
       anonymous: true
-    # Pinned: example totals (examples/*/expect.yaml) and the probe findings
-    # (tests/vltprobe) depend on the Verilator version. Bump in its own PR.
+    # Pinned: the examples' expected totals (examples/*/expect.yaml) depend on
+    # the Verilator version. Bump in its own PR.
     - { name: verilator, src: gh-rls, cache: true, url: https://github.com/edapack/verilator-bin, version: "5.052" }
 
-  # SystemVerilog examples (examples/, see examples-suite-design.md):
+  # SystemVerilog examples (examples/, see examples/README.md):
   #   ivpm update -a -d examples
   - name: examples
     description: dv-flow, Verilator and covsight-core for running the examples.
