@@ -10,6 +10,15 @@ database.  Nothing there is committed; the Forgejo docs job generates it.
 
    Each command as ``$ covsight ...`` followed by its output.
 
+.. covsight-source:: 01-code-basics/show_basic
+   :command: 3         (a ``show source -of json`` command of that Show task)
+   :lines: 17-37       (optional: only these lines of the file)
+   :file: design.sv    (optional when the output has one file)
+
+   The source with each line's hit count, and the branch arms and
+   expression rows under the line they start on; missed and partly hit
+   lines highlighted (HTML; other builders get ``show source``'s text).
+
 .. covsight-parity:: 01-code-basics
 
    covsight's covered/total per kind beside verilator_coverage's, with the
@@ -24,6 +33,7 @@ line, so the docs build without Verilator.  Set ``covsight_examples_required``
 (or the environment variable ``COVSIGHT_EXAMPLES_REQUIRED=1``) to make it an
 error; the docs job does.
 """
+import html
 import json
 import os
 
@@ -100,6 +110,113 @@ class TranscriptDirective(_ExampleDirective):
         return ret
 
 
+class SourceDirective(_ExampleDirective):
+    option_spec = {"command": directives.positive_int,
+                   "lines": directives.unchanged,
+                   "file": directives.unchanged}
+
+    def run(self):
+        root = self._path()
+        index_path = os.path.join(root, "transcript.json")
+        if not os.path.isfile(index_path):
+            return self._missing(os.path.join(self.arguments[0], "transcript.json"))
+        self._depend(index_path)
+        with open(index_path) as f:
+            entry = json.load(f)[self.options.get("command", 1) - 1]
+        out_path = os.path.join(root, entry["file"])
+        self._depend(out_path)
+        with open(out_path) as f:
+            data = json.load(f)
+        files = data["files"]
+        if "file" in self.options:
+            files = [f for f in files if f["file"] == self.options["file"]
+                     or f["file"].endswith("/" + self.options["file"])]
+        if len(files) != 1:
+            raise self.error("%s: expected one file in '%s', found %d (use :file:)"
+                             % (self.name, entry["command"], len(files)))
+        sfile = dict(files[0])
+        if "lines" in self.options:
+            lo, _, hi = self.options["lines"].partition("-")
+            lo, hi = int(lo), int(hi or lo)
+            sfile["lines"] = [ln for ln in sfile["lines"] if lo <= ln["line"] <= hi]
+
+        from covsight.cli.show.show_source import write_file_text
+        import io
+        buf = io.StringIO()
+        write_file_text(sfile, buf)
+        text = nodes.literal_block("", buf.getvalue().rstrip("\n"))
+        text["language"] = "text"
+        fallback = addnodes.only(expr="not html")
+        fallback += text
+        return [nodes.raw("", _source_html(sfile), format="html"), fallback]
+
+
+def _token_class(ttype):
+    from pygments.token import STANDARD_TYPES
+    while ttype not in STANDARD_TYPES:
+        ttype = ttype.parent
+    return STANDARD_TYPES[ttype]
+
+
+def _highlight(fname, lines):
+    """{line: html} for ``lines`` (a list of (n, text)), highlighted as one
+    text so constructs spanning lines lex correctly."""
+    from pygments.lexers import TextLexer, get_lexer_for_filename
+    from pygments.util import ClassNotFound
+    try:
+        lexer = get_lexer_for_filename(fname)
+    except ClassNotFound:
+        lexer = TextLexer()
+    nums = [n for n, _ in lines]
+    out, cur = {}, []
+    i = 0
+    for ttype, value in lexer.get_tokens("\n".join(t for _, t in lines) + "\n"):
+        cls = _token_class(ttype)
+        for k, part in enumerate(value.split("\n")):
+            if k:
+                if i < len(nums):
+                    out[nums[i]] = "".join(cur)
+                i, cur = i + 1, []
+            if part:
+                esc = html.escape(part)
+                cur.append('<span class="%s">%s</span>' % (cls, esc) if cls else esc)
+    return out
+
+
+def _source_html(sfile):
+    esc = html.escape
+    totals = " · ".join("%s %d/%d" % (k, st["covered"], st["total"])
+                        for k, st in sfile["by_kind"].items())
+    lines = sfile["lines"]
+    code = _highlight(sfile["file"], [(ln["line"], ln["text"] or "") for ln in lines])
+    rows = []
+    prev = None
+    for ln in lines:
+        if prev is not None and ln["line"] != prev + 1:
+            rows.append('<tr class="cs-gap"><td class="cs-ln">⋮</td><td></td><td></td></tr>')
+        prev = ln["line"]
+        cls = "cs-" + ln["status"] if ln["status"] else "cs-none"
+        count = "" if ln["count"] is None else str(ln["count"])
+        rows.append('<tr class="%s"><td class="cs-ln">%d</td><td class="cs-n">%s</td>'
+                    '<td class="cs-code">%s</td></tr>'
+                    % (cls, ln["line"], count, code.get(ln["line"], "")))
+        for a in ln["annotations"]:
+            arms = "".join(
+                '<tr class="%s"><td class="cs-n">%d</td><td>%s</td></tr>'
+                % ("cs-covered" if r["covered"] else "cs-missed", r["count"], esc(r["name"]))
+                for r in a["rows"])
+            rows.append(
+                '<tr class="cs-ann"><td></td><td></td><td><div class="cs-point">'
+                '<span class="cs-kind">%s</span> <span class="cs-scope">%s</span>'
+                '<table class="cs-rows">%s</table></div></td></tr>'
+                % (esc(a["kind"]), esc(a["scope"]), arms))
+    return ('<div class="covsight-source"><div class="cs-head"><code>%s</code> '
+            '<span class="cs-totals">%s</span></div><div class="highlight">'
+            '<table class="cs-src"><thead><tr><th>Line</th><th>Hits</th>'
+            '<th>Source</th></tr></thead><tbody>%s</tbody></table></div></div>'
+            % (esc(sfile["file"]), esc(totals), "".join(rows)))
+
+
 class ParityDirective(_ExampleDirective):
     STATE = {"match": "agrees", "explained": "differs (explained)",
              "mismatch": "DIFFERS", "stale": "agrees (stale note)"}
@@ -168,8 +285,15 @@ class DownloadDirective(_ExampleDirective):
         return [para]
 
 
+def _add_static(app, config):
+    config.html_static_path.append(os.path.join(os.path.dirname(__file__), "static"))
+
+
 def setup(app):
     app.add_config_value("covsight_examples_required", False, "env")
+    app.connect("config-inited", _add_static)
+    app.add_css_file("covsight-example.css")
+    app.add_directive("covsight-source", SourceDirective)
     app.add_directive("covsight-transcript", TranscriptDirective)
     app.add_directive("covsight-parity", ParityDirective)
     app.add_directive("covsight-download", DownloadDirective)

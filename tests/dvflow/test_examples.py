@@ -6,6 +6,7 @@ Runs a copy of examples/ in a temporary directory (Verilator required).
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -60,6 +61,11 @@ def test_docs_tree(suite):
             assert str(suite) not in text, "absolute path in %s" % e["file"]
     basic = (gen / "show_basic" / "01-show-code-coverage.txt").read_text()
     assert "line              8      9" in basic        # the hole t_full closes
+    holes = (gen / "show_basic" / "02-show-source.txt").read_text()
+    assert re.search(r"^20 ~ +8 \|", holes, re.M)           # the SUB arm's untaken if
+    assert re.search(r"^31 # +0 \|", holes, re.M)           # the saturate arm
+    assert "every line, branch arm and expression row was hit" in \
+        (gen / "show_merged" / "02-show-source.txt").read_text()
 
 
 def test_moved_total_fails(suite):

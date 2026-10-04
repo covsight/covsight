@@ -17,7 +17,8 @@ module acc #(parameter int W = 8) (
   always_comb begin
     case (op)
       ADD:     next = {1'b0, q} + din;
-      SUB:     next = (din > q) ? '0 : {1'b0, q} - din;
+      SUB:     if (din > q) next = '0;  // would go below zero: stop at zero
+               else         next = {1'b0, q} - din;
       default: next = {1'b0, q};
     endcase
   end

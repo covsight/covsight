@@ -35,9 +35,12 @@ Output lands in `rundir/` (git-ignored).
 - `expect.yaml` — the merged totals `covsight.Check` requires. Check also
   compares covsight with `verilator_coverage --report summary` and the build
   log's warnings with the `warnings` list; any difference fails the run.
-- The docs page is `docs/source/examples/<name>.rst`; the
-  `covsight-transcript`, `covsight-parity` and `covsight-download`
-  directives pull in the generated output.
+- The docs page is `docs/source/examples/<name>.rst`. It explains the
+  design, what each coverage point measures, and each hole: why the first
+  test missed it and what closes it. The `covsight-source` (annotated
+  source, from a `show source -of json` command), `covsight-transcript`,
+  `covsight-parity` and `covsight-download` directives pull in the
+  generated output.
 
 To add an example: create its directory, import it in `flow.yaml` here and
 add it to the `needs` of `all` and `docs`, add its page to

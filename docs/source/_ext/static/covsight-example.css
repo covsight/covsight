@@ -1,0 +1,42 @@
+/* covsight-source: annotated source listings on the example pages. */
+.covsight-source { margin: 0 0 24px 0; }
+.covsight-source .cs-head {
+  font-size: 90%; padding: 4px 8px; background: #f0f0f0;
+  border: 1px solid #e1e4e5; border-bottom: none;
+}
+.covsight-source .cs-totals { color: #555; margin-left: 1em; }
+.rst-content .covsight-source div.highlight {
+  border: 1px solid #e1e4e5; overflow-x: auto; background: #fff; margin: 0;
+}
+.rst-content .covsight-source table.cs-src {
+  border-collapse: collapse; width: 100%; margin: 0;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px; line-height: 1.5;
+}
+.covsight-source table.cs-src th {
+  text-align: left; font-weight: normal; color: #777; padding: 2px 8px;
+  border-bottom: 1px solid #e1e4e5; font-family: inherit;
+}
+.covsight-source table.cs-src td { padding: 0 8px; vertical-align: top; white-space: pre; }
+.covsight-source td.cs-ln { color: #999; text-align: right; user-select: none; }
+.covsight-source td.cs-n { text-align: right; color: #555; }
+.covsight-source table.cs-src tr.cs-covered td.cs-n { background: #e6f4ea; }
+.covsight-source table.cs-src tr.cs-missed td { background: #fbe3e4; }
+.covsight-source table.cs-src tr.cs-missed td.cs-n { color: #b00020; font-weight: bold; }
+.covsight-source table.cs-src tr.cs-partial td { background: #fff4d6; }
+.covsight-source tr.cs-gap td { color: #999; }
+.covsight-source tr.cs-ann td { white-space: normal; padding-bottom: 4px; }
+.covsight-source .cs-point {
+  font-size: 12px; line-height: 1.5;
+  display: inline-block; margin: 2px 0 2px 2em; padding: 2px 8px;
+  border-left: 3px solid #ccc; background: #fafafa;
+}
+.covsight-source .cs-kind { font-weight: bold; }
+.covsight-source .cs-scope { color: #777; }
+.rst-content .covsight-source table.cs-rows { border-collapse: collapse; margin: 2px 0 0 0; }
+.rst-content .covsight-source table.cs-rows td {
+  padding: 0 8px 0 0; white-space: pre; border: none; font-size: 12px; line-height: 1.5;
+}
+.covsight-source table.cs-rows td.cs-n { text-align: right; min-width: 2em; }
+.covsight-source table.cs-rows tr.cs-missed td { background: #fbe3e4; color: #b00020; }
+.covsight-source table.cs-rows tr.cs-missed td.cs-n { font-weight: bold; }

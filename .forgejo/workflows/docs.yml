@@ -133,10 +133,13 @@ jobs:
           n=$(find docs/_build/html -name '*.html' | wc -l)
           echo "generated pages: $n"
           [ "$n" -ge 30 ] || { echo "::error::only $n pages built; expected ~40. Refusing to call this a doc set."; exit 1; }
-          # Every example page carries its generated transcripts.
+          # Every example page carries its generated transcripts and an
+          # annotated source listing.
           for page in docs/_build/html/examples/[0-9]*.html; do
             grep -q '\$ covsight show' "$page" \
               || { echo "::error::$page has no generated transcripts"; exit 1; }
+            grep -q 'class="covsight-source"' "$page" \
+              || { echo "::error::$page has no annotated source"; exit 1; }
           done
           echo "example pages: $(ls docs/_build/html/examples/[0-9]*.html | wc -l)"
 

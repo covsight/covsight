@@ -3,8 +3,8 @@
 #   dfm run all       # build, run both tests, import, merge, show, check
 #
 # t_basic leaves a hole (no add overflows, no subtract goes below zero);
-# t_full closes it. show_basic and show_merged keep the CLI output for
-# t_basic alone and for both tests merged; check holds the merged numbers
+# t_full closes it. show_basic and show_merged keep the CLI output (totals
+# and annotated source) for t_basic alone and for both tests merged; check holds the merged numbers
 # to expect.yaml and to verilator_coverage.
 package:
   name: ex01
@@ -57,20 +57,24 @@ package:
     uses: covsight.Merge
     needs: [cov_basic, cov_full]
 
+  # The docs page shows these: totals, the lines left uncovered, and the
+  # annotated source (rendered from the JSON).
   - export: show_basic
     uses: covsight.Show
     needs: [basic]
     with:
       commands:
       - show code-coverage -of text -sr {srcdir}
-      - show hierarchy -of text
+      - show source -u -sr {srcdir}
+      - show source -of json -sr {srcdir}
   - export: show_merged
     uses: covsight.Show
     needs: [merged]
     with:
       commands:
       - show code-coverage -of text -sr {srcdir}
-      - show hierarchy -of text
+      - show source -u -sr {srcdir}
+      - show source -of json -sr {srcdir}
   - export: check
     uses: covsight.Check
     needs: [merged, t_basic, t_full, img]
